@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Monthly Statement of Account (Supabase)</title>
+<title>Monthly Statement of Account</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -75,8 +75,6 @@ button, input, select { font: inherit; color: inherit; }
 .banner { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; background: var(--soft); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
 .banner p { margin: 0; max-width: 60ch; }
 .bannerbtns { display: flex; gap: 8px; }
-@media (max-width: 720px) { #setupPanel .grid > .f, #loginPanel .grid > .f { grid-column: span 12 !important; } }
-.dbbar { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
 .btn:disabled { opacity: 0.55; cursor: default; }
 .monthnav { display: flex; align-items: center; gap: 6px; }
 .monthnav .label { font-family: var(--display); font-weight: 500; font-size: 1.35rem; min-width: 10.5ch; text-align: center; }
@@ -200,41 +198,6 @@ td.net.inc { color: var(--income); } td.net.exp { color: var(--expense); }
 </head>
 <body>
 <div class="sheet">
-  <div class="banner" id="sbError" role="alert" hidden></div>
-
-  <section class="panel" id="setupPanel" hidden>
-    <h2>Connect to your Supabase project</h2>
-    <p class="hint" style="margin-top:0">Create a free project at supabase.com and run the SQL below once in its SQL Editor. Then paste your Project URL and the <b>anon / publishable</b> key from Project Settings &rarr; API. Never paste the service_role or secret key. These values are saved only in this browser.</p>
-    <div class="grid">
-      <div class="f" style="grid-column: span 12"><label for="sbUrl">SUPABASE_URL (Project URL)</label><input id="sbUrl" type="url" placeholder="https://xxxxxxxx.supabase.co" autocomplete="off"></div>
-      <div class="f" style="grid-column: span 12"><label for="sbKey">SUPABASE_ANON_KEY (anon / publishable key)</label><input id="sbKey" type="password" autocomplete="off"></div>
-    </div>
-    <div class="actions">
-      <button class="btn" id="sbConnect" type="button">Connect</button>
-      <button class="btn ghost" id="sbLocal" type="button">Use on this device only</button>
-      <button class="btn ghost" id="sbCancel" type="button" hidden>Cancel</button>
-      <span class="msg" id="setupMsg" role="alert"></span>
-    </div>
-    <details style="margin-top:14px">
-      <summary>SQL to run once (also saved as supabase-setup.sql)</summary>
-      <pre id="sqlText" style="overflow:auto;max-height:260px;background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px;font-size:0.8rem"></pre>
-      <button class="btn ghost" id="sqlCopy" type="button">Copy SQL</button>
-    </details>
-  </section>
-
-  <section class="panel" id="loginPanel" hidden>
-    <h2>Sign in</h2>
-    <p class="hint" style="margin-top:0">Use an account created for you in Supabase (Authentication &rarr; Users).</p>
-    <div class="grid">
-      <div class="f" style="grid-column: span 6"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
-      <div class="f" style="grid-column: span 6"><label for="loginPass">Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
-    </div>
-    <div class="actions">
-      <button class="btn" id="loginBtn" type="button">Sign in</button>
-      <span class="msg" id="loginMsg" role="alert"></span>
-    </div>
-  </section>
-
   <header class="head">
     <div>
       <h1>Statement of Account</h1>
@@ -274,7 +237,6 @@ td.net.inc { color: var(--income); } td.net.exp { color: var(--expense); }
         <input id="opening" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
       </div>
       <div class="status" id="status" role="status"></div>
-      <div class="dbbar noprint"><button class="link" id="dbSettingsBtn" type="button">Database settings</button> <button class="link" id="signOutBtn" type="button" hidden>Sign out</button></div>
     </div>
     <div class="monthnav">
       <button class="iconbtn" id="prev" aria-label="Previous month">&#8592;</button>
@@ -358,6 +320,7 @@ td.net.inc { color: var(--income); } td.net.exp { color: var(--expense); }
       <div class="lhbtns noprint">
         <button class="btn" id="pdfBtn" type="button" hidden>Download statement (PDF)</button>
         <button class="btn ghost" id="exportBtn" type="button" hidden>Export CSV</button>
+        <button class="btn ghost" id="sqlBtn" type="button" hidden>Export Supabase SQL (overwrite)</button>
       </div>
     </div>
     <div class="msg" id="pdfMsg" role="alert"></div>
@@ -407,271 +370,6 @@ td.net.inc { color: var(--income); } td.net.exp { color: var(--expense); }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script>
-/* Optional defaults. You can also type these into the page; it remembers them in this browser.
-   Use the anon / publishable key only, never the service_role or secret key. */
-window.APP_ENV = { SUPABASE_URL: "", SUPABASE_ANON_KEY: "" };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script>
-(function () {
-  var CFG_KEY = "soa:sb:cfg";
-  var SQL = `-- Statement of Account: run once in Supabase -> SQL Editor
-create table if not exists public.txns (
-  id uuid primary key default gen_random_uuid(),
-  type text not null check (type in ('income', 'expense')),
-  tx_date date not null,
-  item text not null default '',
-  description text not null default '',
-  quantity text not null default '1',
-  amount numeric not null default 0,
-  remarks text not null default '',
-  created bigint not null default 0,
-  recorded_by text,
-  acct text
-);
-create index if not exists txns_acct_date_idx on public.txns (acct, tx_date);
-
-create table if not exists public.settings (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb
-);
-
--- Only signed-in users can read or write. No public access.
-alter table public.txns enable row level security;
-alter table public.settings enable row level security;
-
-drop policy if exists "authenticated full access" on public.txns;
-create policy "authenticated full access" on public.txns
-  for all to authenticated using (true) with check (true);
-
-drop policy if exists "authenticated full access" on public.settings;
-create policy "authenticated full access" on public.settings
-  for all to authenticated using (true) with check (true);
-
--- Live updates between users (safe to re-run)
-do $$ begin
-  alter publication supabase_realtime add table public.txns;
-exception when duplicate_object then null; end $$;
-do $$ begin
-  alter publication supabase_realtime add table public.settings;
-exception when duplicate_object then null; end $$;
-`;
-  var $ = function (id) { return document.getElementById(id); };
-  function showError(m) { var b = $("sbError"); b.textContent = m || ""; b.hidden = !m; }
-
-  /*SHIM-START*/
-  var COLMAP = { date: "tx_date", by: "recorded_by" };
-  function rowToTx(r) {
-    return {
-      type: r.type, date: r.tx_date, item: r.item || "", description: r.description || "",
-      quantity: r.quantity == null ? "1" : String(r.quantity),
-      amount: Number(r.amount) || 0, remarks: r.remarks || "",
-      created: Number(r.created) || 0, by: r.recorded_by || undefined, acct: r.acct || undefined
-    };
-  }
-  function txToRow(rec) {
-    return {
-      type: rec.type === "expense" ? "expense" : "income", tx_date: rec.date, item: rec.item || "",
-      description: rec.description || "", quantity: String(rec.quantity == null ? "1" : rec.quantity),
-      amount: Number(rec.amount) || 0, remarks: rec.remarks || "",
-      created: Number(rec.created) || Date.now(), recorded_by: rec.by || null, acct: rec.acct || null
-    };
-  }
-  function partToRow(part) {
-    var o = {};
-    Object.keys(part).forEach(function (k) { o[COLMAP[k] || k] = part[k]; });
-    return o;
-  }
-  function mapErr(e) {
-    var m = (e && e.message) || "Request failed";
-    var denied = (e && e.code === "42501") || /row-level security|permission denied/i.test(m);
-    return { code: denied ? "invalid_argument" : "unavailable", message: m };
-  }
-  function friendly(m) {
-    return /does not exist|schema cache|Could not find the table/i.test(m)
-      ? "The database tables are missing. Run supabase-setup.sql in the Supabase SQL Editor, then reload."
-      : "Database error: " + m;
-  }
-  function makeDb(c) {
-    var txL = [], stL = [], timers = {};
-    function fail(e) { showError(friendly(mapErr(e).message)); }
-    function later(k, fn) { clearTimeout(timers[k]); timers[k] = setTimeout(fn, 120); }
-    function fetchTx() {
-      var all = [];
-      function page(from) {
-        return c.from("txns").select("*").order("created", { ascending: true }).range(from, from + 999).then(function (r) {
-          if (r.error) throw r.error;
-          var d = r.data || [];
-          all = all.concat(d);
-          if (d.length === 1000) return page(from + 1000);
-        });
-      }
-      return page(0).then(function () {
-        showError("");
-        var docs = all.map(function (r) { return { id: r.id, data: function () { return rowToTx(r); } }; });
-        txL.forEach(function (cb) { cb({ docs: docs }); });
-      }).catch(fail);
-    }
-    function fetchSt() {
-      return c.from("settings").select("data").eq("id", "main").maybeSingle().then(function (r) {
-        if (r.error) throw r.error;
-        var row = r.data;
-        var snap = { exists: !!row, data: function () { return row ? row.data : {}; } };
-        stL.forEach(function (cb) { cb(snap); });
-      }).catch(fail);
-    }
-    function done(kind) {
-      return function (r) {
-        if (r && r.error) { var er = mapErr(r.error); if (/does not exist|schema cache/i.test(er.message)) showError(friendly(er.message)); throw er; }
-        later(kind, kind === "tx" ? fetchTx : fetchSt);
-      };
-    }
-    try {
-      c.channel("soa-live")
-        .on("postgres_changes", { event: "*", schema: "public", table: "txns" }, function () { later("tx", fetchTx); })
-        .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, function () { later("st", fetchSt); })
-        .subscribe();
-    } catch (e) {}
-    setInterval(function () { if (!document.hidden && (txL.length || stL.length)) { fetchTx(); fetchSt(); } }, 30000);
-    return {
-      collection: function () {
-        return {
-          onSnapshot: function (cb) { txL.push(cb); fetchTx(); return function () { txL = txL.filter(function (x) { return x !== cb; }); }; },
-          add: function (rec) { return c.from("txns").insert(txToRow(rec)).then(done("tx")); }
-        };
-      },
-      doc: function (path) {
-        var p = path.split("/"), id = p[1];
-        if (p[0] === "txns") {
-          return {
-            set: function (rec) { return c.from("txns").update(txToRow(rec)).eq("id", id).then(done("tx")); },
-            update: function (part) { return c.from("txns").update(partToRow(part)).eq("id", id).then(done("tx")); },
-            delete: function () { return c.from("txns").delete().eq("id", id).then(done("tx")); }
-          };
-        }
-        return {
-          onSnapshot: function (cb) { stL.push(cb); fetchSt(); return function () { stL = stL.filter(function (x) { return x !== cb; }); }; },
-          set: function (obj) { return c.from("settings").upsert({ id: "main", data: obj }).then(done("st")); }
-        };
-      }
-    };
-  }
-  /*SHIM-END*/
-
-  var MIME = { csv: "text/csv;charset=utf-8", pdf: "application/pdf" };
-  var downloadShim = {
-    save: function (req) {
-      return new Promise(function (resolve, reject) {
-        try {
-          var ext = String(req.filename).split(".").pop().toLowerCase();
-          var blob = req.data instanceof Blob ? req.data : new Blob([req.data], { type: MIME[ext] || "application/octet-stream" });
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob); a.download = req.filename;
-          document.body.appendChild(a); a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-          resolve({ status: "saved" });
-        } catch (e) { reject({ code: "unavailable", message: "Download failed" }); }
-      });
-    }
-  };
-
-  var resolveGate, gateOpen = false;
-  var gate = new Promise(function (r) { resolveGate = r; });
-  var client = null, email = "", reconfigure = false;
-  function open(v) { gateOpen = true; resolveGate(v); }
-
-  function loadCfg() {
-    var env = window.APP_ENV || {}, saved = {};
-    try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "{}") || {}; } catch (e) {}
-    return { url: String(saved.url || env.SUPABASE_URL || "").trim(), key: String(saved.key || env.SUPABASE_ANON_KEY || "").trim() };
-  }
-  function keyRole(k) {
-    try { return JSON.parse(atob(k.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).role || ""; } catch (e) { return ""; }
-  }
-  function badKey(k) { return /^sb_secret_/.test(k) || keyRole(k) === "service_role"; }
-  function showSetup(cfg, msg) {
-    $("loginPanel").hidden = true;
-    $("setupPanel").hidden = false;
-    $("sbUrl").value = cfg.url; $("sbKey").value = cfg.key;
-    $("setupMsg").textContent = msg || "";
-    $("sbLocal").hidden = gateOpen; $("sbCancel").hidden = !gateOpen;
-  }
-  function showLogin() { $("setupPanel").hidden = true; $("loginPanel").hidden = false; $("loginEmail").focus(); }
-  function ready(sess) {
-    email = (sess && sess.user && sess.user.email) || "";
-    $("setupPanel").hidden = true; $("loginPanel").hidden = true; $("signOutBtn").hidden = false;
-    open(client);
-  }
-  function proceed() {
-    var cfg = loadCfg();
-    if (!cfg.url || !cfg.key) { showSetup(cfg); return; }
-    if (badKey(cfg.key)) { showSetup(cfg, "That looks like a secret (service_role) key. Use the anon / publishable key instead."); return; }
-    if (!window.supabase || !window.supabase.createClient) { showSetup(cfg, "The Supabase library couldn't load. Check your connection and reload."); return; }
-    try {
-      client = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true } });
-    } catch (e) { showSetup(cfg, "That URL or key isn't valid."); return; }
-    client.auth.getSession().then(function (r) {
-      var sess = r && r.data && r.data.session;
-      if (sess) ready(sess); else showLogin();
-    }).catch(function () { showSetup(cfg, "Couldn't reach Supabase. Check the Project URL."); });
-  }
-
-  $("sqlText").textContent = SQL;
-  $("sqlCopy").addEventListener("click", function () {
-    try { navigator.clipboard.writeText(SQL); $("sqlCopy").textContent = "Copied"; setTimeout(function () { $("sqlCopy").textContent = "Copy SQL"; }, 1500); } catch (e) {}
-  });
-  $("sbConnect").addEventListener("click", function () {
-    var url = $("sbUrl").value.trim().replace(/\/+$/, ""), key = $("sbKey").value.trim();
-    if (!/^https:\/\/[^\s/]+$/i.test(url)) { $("setupMsg").textContent = "Enter the Project URL, like https://abcd1234.supabase.co"; return; }
-    if (!key) { $("setupMsg").textContent = "Enter the anon / publishable key."; return; }
-    if (badKey(key)) { $("setupMsg").textContent = "That looks like a secret (service_role) key. Use the anon / publishable key instead."; return; }
-    try { localStorage.setItem(CFG_KEY, JSON.stringify({ url: url, key: key })); } catch (e) {}
-    if (reconfigure) { location.reload(); return; }
-    $("setupMsg").textContent = "";
-    proceed();
-  });
-  $("sbLocal").addEventListener("click", function () { $("setupPanel").hidden = true; open(null); });
-  $("sbCancel").addEventListener("click", function () { reconfigure = false; $("setupPanel").hidden = true; });
-  $("dbSettingsBtn").addEventListener("click", function () { reconfigure = gateOpen; showSetup(loadCfg()); });
-  $("loginBtn").addEventListener("click", function () {
-    var e = $("loginEmail").value.trim(), p = $("loginPass").value;
-    if (!e || !p) { $("loginMsg").textContent = "Enter your email and password."; return; }
-    $("loginBtn").disabled = true; $("loginMsg").textContent = "";
-    client.auth.signInWithPassword({ email: e, password: p }).then(function (r) {
-      if (r.error) { $("loginMsg").textContent = r.error.message; return; }
-      ready(r.data.session);
-    }).catch(function () { $("loginMsg").textContent = "Couldn't sign in. Try again."; })
-      .then(function () { $("loginBtn").disabled = false; });
-  });
-  $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
-  $("signOutBtn").addEventListener("click", function () {
-    if (!client) return;
-    client.auth.signOut().then(function () { location.reload(); });
-  });
-
-  /* Present the same capability surface the page code already uses. */
-  window.claude = {
-    use: function (name) {
-      if (name === "db") return gate.then(function (c) { return c ? makeDb(c) : null; });
-      if (name === "user") return gate.then(function (c) {
-        return c ? {
-          can: function () { return Promise.resolve(true); },
-          me: function () { return Promise.resolve({ id: email }); },
-          profiles: function (ids) {
-            var o = {};
-            ids.forEach(function (i) { o[i] = { name: i, isMe: i === email }; });
-            return Promise.resolve(o);
-          }
-        } : null;
-      });
-      if (name === "downloads") return Promise.resolve(downloadShim);
-      return Promise.resolve(null);
-    }
-  };
-  proceed();
-})();
-</script>
 <script>
 (function () {
   var KEY = "soa:v1", DISMISS = "soa:v1:dismissed";
@@ -1100,9 +798,9 @@ exception when duplicate_object then null; end $$;
     if (ready()) ensureSel();
     var st = $("status");
     st.className = "status " + (mode === "shared" ? (ro ? "ro" : "live") : mode);
-    st.textContent = mode === "connecting" ? "Connecting…"
+    st.textContent = mode === "connecting" ? "Connecting to shared storage…"
       : mode === "local" ? "Saved on this device only"
-      : ro ? "Connected to Supabase · view only" : "Connected to Supabase · changes sync live";
+      : ro ? "Shared statement · view only" : "Shared statement · changes sync live";
     $("formPanel").hidden = ro;
     refreshItems();
     $("account").disabled = ro; $("acctSel").disabled = ro; $("symbol").disabled = ro; $("opening").disabled = ro || !sel.acct;
@@ -1145,6 +843,7 @@ exception when duplicate_object then null; end $$;
     if (!lrows.length) empty.textContent = filtersActive() && ready() && sel.acct ? "No transactions match these filters." : !ready() ? "Loading transactions…" : !sel.acct ? "Add an account for this client to start recording transactions." : "No transactions for " + monthLabel() + (ro ? "." : ". Add the first one above.");
     $("exportBtn").hidden = !downloads || !lrows.length;
     $("pdfBtn").hidden = !downloads || !sel.acct || !ready();
+    $("sqlBtn").hidden = !downloads || !ready();
 
     var a = document.activeElement;
     if (a && a.classList && a.classList.contains("adjin")) { dirtyRows = true; return; }
@@ -1169,7 +868,7 @@ exception when duplicate_object then null; end $$;
         '<td class="desc">' + esc(t.description) + '</td>' +
         '<td class="r">' + esc(t.quantity) + '</td>' +
         '<td class="r">' + money(num(t.amount)) + '</td>' +
-        '<td class="r net ' + cls + '">' + money(totalOf(t)) + '</td>' +
+        '<td class="r net ' + cls + '">' + (t.type === "expense" ? "(" + money(totalOf(t)) + ")" : money(totalOf(t))) + '</td>' +
         '<td class="desc">' + esc(t.remarks) + '</td>' +
         '<td class="by" data-by="' + esc(t.by || "") + '">' + (t.by ? "" : "\u2014") + '</td>' +
         '<td class="noprint"><div class="rowbtns">' + delBtn + '</div></td></tr>';
@@ -1275,6 +974,7 @@ exception when duplicate_object then null; end $$;
   $("cancelBtn").addEventListener("click", clearForm);
   $("exportBtn").addEventListener("click", exportCsv);
   $("pdfBtn").addEventListener("click", statementPdf);
+  $("sqlBtn").addEventListener("click", exportSql);
   $("moveBtn").addEventListener("click", moveLegacy);
   $("skipBtn").addEventListener("click", function () {
     try { localStorage.setItem(DISMISS, "1"); } catch (e) {}
@@ -1536,6 +1236,90 @@ exception when duplicate_object then null; end $$;
     } catch (err) {
       msg.textContent = "Couldn't create the PDF. Try again.";
     }
+  }
+
+  /* ---------- Supabase SQL export ---------- */
+  var SCHEMA_SQL = [
+    "-- Schema (safe to re-run)",
+    "create table if not exists public.txns (",
+    "  id uuid primary key default gen_random_uuid(),",
+    "  type text not null check (type in ('income', 'expense')),",
+    "  tx_date date not null,",
+    "  item text not null default '',",
+    "  description text not null default '',",
+    "  quantity text not null default '1',",
+    "  amount numeric not null default 0,",
+    "  remarks text not null default '',",
+    "  created bigint not null default 0,",
+    "  recorded_by text,",
+    "  acct text",
+    ");",
+    "create index if not exists txns_acct_date_idx on public.txns (acct, tx_date);",
+    "create table if not exists public.settings (",
+    "  id text primary key,",
+    "  data jsonb not null default '{}'::jsonb",
+    ");",
+    "alter table public.txns enable row level security;",
+    "alter table public.settings enable row level security;",
+    "drop policy if exists \"authenticated full access\" on public.txns;",
+    "create policy \"authenticated full access\" on public.txns for all to authenticated using (true) with check (true);",
+    "drop policy if exists \"authenticated full access\" on public.settings;",
+    "create policy \"authenticated full access\" on public.settings for all to authenticated using (true) with check (true);",
+    "do $$ begin alter publication supabase_realtime add table public.txns; exception when others then null; end $$;",
+    "do $$ begin alter publication supabase_realtime add table public.settings; exception when others then null; end $$;"
+  ].join("\n");
+  function sqlStr(v) { return "'" + String(v == null ? "" : v).replace(/\u0000/g, "").replace(/'/g, "''") + "'"; }
+  function sqlNum(v) { var n = Number(v); return isFinite(n) ? String(n) : "0"; }
+  function exportSql() {
+    var msg = $("pdfMsg");
+    msg.style.color = ""; msg.textContent = "";
+    if (!downloads || !ready()) return;
+    var ids = [];
+    state.txns.forEach(function (t) { if (t.by && ids.indexOf(t.by) < 0) ids.push(t.by); });
+    var named = (userNs && ids.length) ? userNs.profiles(ids) : Promise.resolve({});
+    $("sqlBtn").disabled = true;
+    named.then(function (ps) {
+      var good = state.txns.filter(function (t) { return /^\d{4}-\d{2}-\d{2}$/.test(t.date || ""); });
+      var skipped = state.txns.length - good.length;
+      good.sort(function (a, b) { return a.date === b.date ? (a.created || 0) - (b.created || 0) : (a.date < b.date ? -1 : 1); });
+      var out = [
+        "-- Statement of Account export for Supabase",
+        "-- Generated " + toUS(todayStr()) + ". Paste into Supabase > SQL Editor and run.",
+        "-- OVERWRITE: this deletes every existing row in public.txns and replaces the",
+        "-- settings row 'main' with the data below. It runs as one transaction, so if",
+        "-- anything fails, nothing is changed. Running it again gives the same result.",
+        "-- " + good.length + " transaction" + (good.length === 1 ? "" : "s") + (skipped ? " (" + skipped + " skipped: missing or invalid date)" : ""),
+        "",
+        "begin;",
+        "",
+        SCHEMA_SQL,
+        "",
+        "-- Overwrite table contents",
+        "truncate table public.txns;",
+        ""
+      ];
+      if (good.length) {
+        out.push("insert into public.txns (id, type, tx_date, item, description, quantity, amount, remarks, created, recorded_by, acct) values");
+        out.push(good.map(function (t) {
+          var pr = t.by && ps[t.by], who = pr && pr.name ? pr.name : null;
+          return "  (md5(" + sqlStr("soa:" + t.id) + ")::uuid, " + sqlStr(t.type === "expense" ? "expense" : "income") + ", " +
+            sqlStr(t.date) + "::date, " + sqlStr(t.item) + ", " + sqlStr(t.description) + ", " + sqlStr(t.quantity == null ? "1" : t.quantity) + ", " +
+            sqlNum(t.amount) + ", " + sqlStr(t.remarks) + ", " + sqlNum(t.created) + ", " + (who ? sqlStr(who) : "null") + ", " + sqlStr(t.acct || "default") + ")";
+        }).join(",\n"));
+        out.push(";");
+        out.push("");
+      }
+      var payload = { account: state.account, symbol: state.symbol, opening: num(state.opening), items: state.items, clients: state.clients, accounts: state.accounts };
+      out.push("insert into public.settings (id, data) values ('main', " + sqlStr(JSON.stringify(payload)) + "::jsonb)");
+      out.push("on conflict (id) do update set data = excluded.data;");
+      out.push("");
+      out.push("commit;");
+      return downloads.save({ filename: "statement-of-account-supabase-overwrite_" + todayStr() + ".txt", data: out.join("\n") + "\n" });
+    }).then(function (r) {
+      if (r !== undefined) { msg.style.color = "var(--muted)"; msg.textContent = "Saved as a .txt file. Paste its contents into Supabase > SQL Editor and run it."; }
+    }).catch(function (e) {
+      if (!e || e.code !== "declined") msg.textContent = "Couldn't create the SQL export. Try again.";
+    }).then(function () { $("sqlBtn").disabled = false; });
   }
 
   /* ---------- searchable dropdowns ---------- */

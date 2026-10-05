@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monthly Statement of Account (Supabase)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #eef3f1;
+  --paper: #fbfdfc;
+  --ink: #12211d;
+  --muted: #5b6c66;
+  --rule: #cbd8d2;
+  --soft: #e3ece8;
+  --income: #17694a;
+  --income-bg: #dcf0e6;
+  --expense: #93362a;
+  --expense-bg: #f6e0db;
+  --accent: #12211d;
+  --accent-ink: #fbfdfc;
+  --focus: #2b6cd4;
+  --display: "Bricolage Grotesque", "Trebuchet MS", "Segoe UI", sans-serif;
+  --body: "Hanken Grotesk", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1715; --paper: #15211e; --ink: #e6efeb; --muted: #97aaa3; --rule: #2b3b36; --soft: #1d2c28;
+    --income: #6fd1a2; --income-bg: #17362a; --expense: #f0917f; --expense-bg: #3b1f1a;
+    --accent: #e6efeb; --accent-ink: #12211d; --focus: #7db0ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1715; --paper: #15211e; --ink: #e6efeb; --muted: #97aaa3; --rule: #2b3b36; --soft: #1d2c28;
+  --income: #6fd1a2; --income-bg: #17362a; --expense: #f0917f; --expense-bg: #3b1f1a;
+  --accent: #e6efeb; --accent-ink: #12211d; --focus: #7db0ff;
+}
+*, *::before, *::after { box-sizing: inherit; }
+[hidden] { display: none !important; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+.sheet { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* header */
+.head { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; padding: 8px 0 20px; }
+.head h1 { font-family: var(--display); font-weight: 700; font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.05; margin: 0 0 6px; letter-spacing: -0.02em; }
+.account { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.pk label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 2px; }
+#acctSel { min-width: 180px; max-width: 100%; }
+.account input { background: transparent; border: 0; border-bottom: 1.5px dashed var(--rule); padding: 4px 2px; min-width: 200px; font-size: 1rem; }
+.account input::placeholder { color: var(--muted); }
+.account select { background: transparent; border: 1px solid var(--rule); border-radius: 6px; padding: 4px 6px; }
+#account { min-width: 220px; max-width: 100%; }
+.account .btn { min-height: 40px; padding: 0 14px; }
+.btn.danger { background: var(--expense); border-color: var(--expense); color: #fff; }
+.btn.ghost.danger { background: transparent; color: var(--expense); border-color: var(--rule); }
+.delrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; background: var(--expense-bg); border-radius: 8px; padding: 8px 12px; max-width: 560px; }
+.delrow span { flex: 1 1 260px; }
+.clientnew { display: flex; gap: 6px; margin-top: 8px; max-width: 360px; }
+.clientnew input { flex: 1; min-width: 0; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; min-height: 40px; }
+.clientnew .btn { padding: 0 14px; min-height: 40px; }
+.opening { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.opening label { font-size: 0.9rem; color: var(--muted); }
+.opening input { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; width: 160px; min-height: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+.status { display: inline-block; margin-top: 10px; font-size: 0.85rem; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--rule); color: var(--muted); }
+.status.live { color: var(--income); border-color: var(--income); }
+.status.ro { color: var(--expense); border-color: var(--expense); }
+.banner { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; background: var(--soft); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+.banner p { margin: 0; max-width: 60ch; }
+.bannerbtns { display: flex; gap: 8px; }
+@media (max-width: 720px) { #setupPanel .grid > .f, #loginPanel .grid > .f { grid-column: span 12 !important; } }
+.dbbar { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.monthnav { display: flex; align-items: center; gap: 6px; }
+.monthnav .label { font-family: var(--display); font-weight: 500; font-size: 1.35rem; min-width: 10.5ch; text-align: center; }
+.iconbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule); background: var(--paper); cursor: pointer; font-size: 1.1rem; display: grid; place-items: center; }
+.iconbtn:hover { background: var(--soft); }
+
+/* summary */
+.summary { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1fr; gap: 0; background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; }
+.summary > div { padding: 22px 24px; }
+.summary > div + div { border-left: 1px solid var(--rule); }
+.summary .k { color: var(--muted); font-size: 0.9rem; margin-bottom: 4px; }
+.summary .v { font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.summary .main { background: var(--income-bg); }
+.summary .main .k { color: var(--income); font-weight: 600; }
+.summary .main .v { font-size: clamp(2.2rem, 7vw, 3.6rem); color: var(--income); line-height: 1.05; }
+.summary .side .v { font-size: 1.45rem; }
+.summary .sub { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+.summary .main .sub { color: var(--income); }
+.neg { color: var(--expense); }
+
+/* form */
+.panel { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 20px 24px; margin-top: 16px; }
+.panel h2 { font-family: var(--display); font-weight: 500; font-size: 1.2rem; margin: 0 0 14px; }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+.f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.f label { font-size: 0.85rem; color: var(--muted); }
+.f select { background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 10px; width: 100%; min-height: 44px; }
+.datewrap { display: flex; gap: 6px; }
+.datewrap #date { flex: 1; min-width: 0; }
+.pick { position: relative; flex: none; width: 44px; min-height: 44px; border: 1px solid var(--rule); border-radius: 8px; background: var(--bg); display: grid; place-items: center; cursor: pointer; }
+.pick:hover { background: var(--soft); }
+.pick:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pick input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+.pick input[type="date"]::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.newitem { display: flex; gap: 6px; margin-top: 6px; }
+.newitem input { flex: 1; }
+.newitem .btn { padding: 0 14px; }
+.f input { background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 10px; width: 100%; min-height: 44px; }
+.c-type { grid-column: span 5; } .c-date { grid-column: span 3; }
+.c-item { grid-column: span 4; } .c-desc { grid-column: span 8; }
+.c-qty { grid-column: span 3; } .c-amt { grid-column: span 4; } .c-rem { grid-column: span 5; }
+.seg { display: inline-grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; min-height: 44px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { display: grid; place-items: center; cursor: pointer; padding: 0 16px; font-size: 0.95rem; color: var(--ink); background: var(--bg); }
+.seg input:checked + label.inc { background: var(--income); color: #fff; }
+.seg input:checked + label.exp { background: var(--expense); color: #fff; }
+.seg input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: -3px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.btn { min-height: 44px; padding: 0 20px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; font-weight: 600; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); font-weight: 500; }
+.btn:hover { filter: brightness(1.12); }
+.msg { color: var(--expense); font-size: 0.9rem; }
+.hint { color: var(--muted); font-size: 0.85rem; margin: 10px 0 0; }
+
+/* ledger */
+.ledgerhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.ledgerhead h2 { margin: 0; }
+.lhbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.scope { font-family: var(--body); font-weight: 400; font-size: 0.9rem; color: var(--muted); margin-left: 8px; }
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 10px; }
+.fw-type { width: 160px; } .fw-item { width: 210px; } .fw-date { width: 200px; }
+.filtersum { background: var(--soft); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 960px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 600; font-size: 0.85rem; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th.r, td.r { text-align: right; }
+tr[data-id] { cursor: default; }
+tr.inc td:first-child { box-shadow: inset 4px 0 0 var(--income); }
+tr.exp td:first-child { box-shadow: inset 4px 0 0 var(--expense); }
+.tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 99px; margin-top: 2px; }
+.tag.inc { background: var(--income-bg); color: var(--income); }
+.tag.exp { background: var(--expense-bg); color: var(--expense); }
+.desc { color: var(--muted); font-size: 0.9rem; }
+td.net { font-weight: 600; }
+td.net.inc { color: var(--income); } td.net.exp { color: var(--expense); }
+.by { color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
+.rowbtns { display: flex; gap: 6px; white-space: nowrap; }
+.link { background: none; border: 1px solid var(--rule); border-radius: 6px; padding: 5px 10px; min-height: 36px; cursor: pointer; font-size: 0.85rem; }
+.link:hover { background: var(--soft); }
+.link.danger { color: var(--expense); }
+.empty { padding: 32px 8px; text-align: center; color: var(--muted); }
+
+@media (max-width: 720px) {
+  .summary { grid-template-columns: 1fr 1fr; }
+  .summary .main, .summary .begin { grid-column: 1 / -1; }
+  .summary > div + div { border-left: 0; }
+  .summary .side { border-top: 1px solid var(--rule); }
+  .summary .side:last-child { border-left: 1px solid var(--rule); }
+  .c-type, .c-date, .c-item, .c-desc, .c-rem { grid-column: span 12; }
+  .c-qty { grid-column: span 4; } .c-amt { grid-column: span 8; }
+  .panel { padding: 16px; }
+}
+@media print {
+  body { background: #fff; color: #000; }
+  .noprint, .rowbtns, .iconbtn { display: none !important; }
+}
+/* searchable dropdowns */
+.combo { position: relative; width: 100%; }
+.combo[data-for="account"] { min-width: 220px; }
+.combo[data-for="acctSel"] { min-width: 180px; }
+.combo .combo-native { position: absolute; left: 0; top: 0; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.combo-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 10px; min-height: 44px; }
+.account .combo-btn { background: var(--paper); min-height: 40px; padding: 6px 10px; }
+.combo-btn:disabled { opacity: 0.6; cursor: default; }
+.combo-btn.empty .combo-txt { color: var(--muted); }
+.combo-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.combo-caret { flex: none; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--muted); }
+.combo-pop { position: absolute; z-index: 40; left: 0; top: calc(100% + 4px); min-width: 100%; width: max-content; max-width: min(360px, 92vw); background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); padding: 8px; }
+.combo-pop.up { top: auto; bottom: calc(100% + 4px); }
+.combo-pop .combo-q { width: 100%; min-height: 40px; background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; }
+.combo-list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 240px; overflow-y: auto; }
+.combo-list li { padding: 9px 10px; border-radius: 6px; cursor: pointer; }
+.combo-list li.active { background: var(--soft); }
+.combo-list li.on { font-weight: 600; }
+.combo-list li.add { color: var(--income); border-top: 1px solid var(--rule); border-radius: 0 0 6px 6px; margin-top: 4px; }
+.combo-list li.combo-none { color: var(--muted); cursor: default; }
+@media print { .combo-caret { display: none; } .combo-btn { border: 0; padding: 0; background: transparent; min-height: 0; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="banner" id="sbError" role="alert" hidden></div>
+
+  <section class="panel" id="setupPanel" hidden>
+    <h2>Connect to your Supabase project</h2>
+    <p class="hint" style="margin-top:0">Create a free project at supabase.com and run the SQL below once in its SQL Editor. Then paste your Project URL and the <b>anon / publishable</b> key from Project Settings &rarr; API. Never paste the service_role or secret key. These values are saved only in this browser.</p>
+    <div class="grid">
+      <div class="f" style="grid-column: span 12"><label for="sbUrl">SUPABASE_URL (Project URL)</label><input id="sbUrl" type="url" placeholder="https://xxxxxxxx.supabase.co" autocomplete="off"></div>
+      <div class="f" style="grid-column: span 12"><label for="sbKey">SUPABASE_ANON_KEY (anon / publishable key)</label><input id="sbKey" type="password" autocomplete="off"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="sbConnect" type="button">Connect</button>
+      <button class="btn ghost" id="sbLocal" type="button">Use on this device only</button>
+      <button class="btn ghost" id="sbCancel" type="button" hidden>Cancel</button>
+      <span class="msg" id="setupMsg" role="alert"></span>
+    </div>
+    <details style="margin-top:14px">
+      <summary>SQL to run once (also saved as supabase-setup.sql)</summary>
+      <pre id="sqlText" style="overflow:auto;max-height:260px;background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px;font-size:0.8rem"></pre>
+      <button class="btn ghost" id="sqlCopy" type="button">Copy SQL</button>
+    </details>
+  </section>
+
+  <section class="panel" id="loginPanel" hidden>
+    <h2>Sign in</h2>
+    <p class="hint" style="margin-top:0">Use an account created for you in Supabase (Authentication &rarr; Users).</p>
+    <div class="grid">
+      <div class="f" style="grid-column: span 6"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+      <div class="f" style="grid-column: span 6"><label for="loginPass">Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="loginBtn" type="button">Sign in</button>
+      <span class="msg" id="loginMsg" role="alert"></span>
+    </div>
+  </section>
+
+  <header class="head">
+    <div>
+      <h1>Statement of Account</h1>
+      <div class="account">
+        <div class="pk"><label for="account">Client</label><select id="account"></select></div>
+        <button class="btn ghost" id="renameBtn" type="button" hidden>Rename</button>
+        <div class="pk"><label for="acctSel">Account</label><select id="acctSel"></select></div>
+        <button class="btn ghost" id="acctRenameBtn" type="button" aria-label="Rename account" hidden>Rename</button>
+        <button class="btn ghost danger" id="acctDelBtn" type="button" aria-label="Delete account" hidden>Delete</button>
+        <div class="pk"><label for="symbol">Currency</label>
+          <select id="symbol">
+            <option value="₱">₱ PHP</option>
+            <option value="$">$ USD</option>
+            <option value="€">€ EUR</option>
+            <option value="£">£ GBP</option>
+            <option value="¥">¥ JPY</option>
+          </select>
+        </div>
+      </div>
+      <div class="clientnew" id="newClientRow" hidden>
+        <input id="clientNew" type="text" maxlength="80" placeholder="New client name" aria-label="New client name">
+        <button class="btn ghost" id="clientAddBtn" type="button">Add</button>
+      </div>
+      <div class="msg" id="clientMsg" role="alert"></div>
+      <div class="clientnew" id="newAcctRow" hidden>
+        <input id="acctNew" type="text" maxlength="80" placeholder="New account name" aria-label="New account name">
+        <button class="btn ghost" id="acctAddBtn" type="button">Add</button>
+      </div>
+      <div class="msg" id="acctMsg" role="alert"></div>
+      <div class="delrow" id="delAcctRow" hidden>
+        <span id="delAcctText"></span>
+        <button class="btn danger" id="delAcctOk" type="button">Delete</button>
+        <button class="btn ghost" id="delAcctNo" type="button">Cancel</button>
+      </div>
+      <div class="opening">
+        <label for="opening">Opening balance</label>
+        <input id="opening" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <div class="dbbar noprint"><button class="link" id="dbSettingsBtn" type="button">Database settings</button> <button class="link" id="signOutBtn" type="button" hidden>Sign out</button></div>
+    </div>
+    <div class="monthnav">
+      <button class="iconbtn" id="prev" aria-label="Previous month">&#8592;</button>
+      <div class="label" id="monthLabel" aria-live="polite"></div>
+      <button class="iconbtn" id="next" aria-label="Next month">&#8594;</button>
+    </div>
+  </header>
+
+  <div class="banner noprint" id="banner" hidden>
+    <p id="bannerText"></p>
+    <div class="bannerbtns">
+      <button class="btn" id="moveBtn" type="button">Move to shared</button>
+      <button class="btn ghost" id="skipBtn" type="button">Not now</button>
+    </div>
+  </div>
+
+  <section class="summary" aria-label="Monthly totals">
+    <div class="main">
+      <div class="k">Total current balance</div>
+      <div class="v" id="totCurrent">0.00</div>
+      <div class="sub">Beginning balance + settlement &minus; expenses</div>
+    </div>
+    <div class="side begin">
+      <div class="k">Beginning balance</div>
+      <div class="v" id="totBegin">0.00</div>
+      <div class="sub" id="beginNote">Carried over from earlier months</div>
+    </div>
+    <div class="side">
+      <div class="k">Settlement added</div>
+      <div class="v" id="totIncome">0.00</div>
+    </div>
+    <div class="side">
+      <div class="k">Expenses deducted</div>
+      <div class="v" id="totExpense">0.00</div>
+    </div>
+  </section>
+
+  <section class="panel noprint" id="formPanel" aria-labelledby="formTitle">
+    <h2 id="formTitle">Add transaction</h2>
+    <div class="grid">
+      <div class="f c-type">
+        <label id="typeLbl">Type</label>
+        <div class="seg" role="radiogroup" aria-labelledby="typeLbl">
+          <input type="radio" name="type" id="tInc" value="income" checked>
+          <label class="inc" for="tInc">Settlement</label>
+          <input type="radio" name="type" id="tExp" value="expense">
+          <label class="exp" for="tExp">Expense</label>
+        </div>
+      </div>
+      <div class="f c-date"><label for="date">Transaction date</label><div class="datewrap">
+          <input id="date" type="text" inputmode="numeric" placeholder="mm/dd/yyyy" maxlength="10" autocomplete="off">
+          <span class="pick" title="Pick a date">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <input id="datePick" type="date" aria-label="Open calendar to pick a date">
+          </span>
+        </div></div>
+      <div class="f c-item">
+        <label for="item">Item</label>
+        <select id="item"><option value="">Select an item&hellip;</option><option value="__new__">+ Add new item&hellip;</option></select>
+        <div class="newitem" id="newItemRow" hidden>
+          <input id="itemNew" type="text" maxlength="80" placeholder="New item name" aria-label="New item name">
+          <button class="btn ghost" id="itemAddBtn" type="button">Add</button>
+        </div>
+      </div>
+      <div class="f c-desc"><label for="desc">Description</label><input id="desc" type="text" maxlength="200"></div>
+      <div class="f c-qty"><label for="qty">Quantity</label><input id="qty" type="number" min="0" step="any" value="1" inputmode="decimal"></div>
+      <div class="f c-amt"><label for="amt">Amount</label><input id="amt" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <div class="f c-rem"><label for="rem">Remarks</label><input id="rem" type="text" maxlength="200"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="saveBtn" type="button">Add transaction</button>
+      <button class="btn ghost" id="cancelBtn" type="button" hidden>Cancel edit</button>
+      <span class="msg" id="msg" role="alert"></span>
+    </div>
+    <p class="hint">Amount is the price per unit. Total Amount = quantity &times; amount. Each month starts with the previous month&rsquo;s ending balance; settlements are added and expenses are deducted.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="ledgerTitle">
+    <div class="ledgerhead">
+      <h2 id="ledgerTitle">Transactions <span class="scope" id="listScope"></span></h2>
+      <div class="lhbtns noprint">
+        <button class="btn" id="pdfBtn" type="button" hidden>Download statement (PDF)</button>
+        <button class="btn ghost" id="exportBtn" type="button" hidden>Export CSV</button>
+      </div>
+    </div>
+    <div class="msg" id="pdfMsg" role="alert"></div>
+    <div class="filters noprint" role="group" aria-label="Filter transactions">
+      <div class="f fw-type"><label for="fType">Transaction type</label>
+        <select id="fType"><option value="">All types</option><option value="income">Settlement</option><option value="expense">Expense</option></select>
+      </div>
+      <div class="f fw-item"><label for="fItem">Item</label>
+        <select id="fItem"><option value="">All items</option></select>
+      </div>
+      <div class="f fw-date"><label for="fFrom">Date from</label>
+        <div class="datewrap">
+          <input id="fFrom" type="text" inputmode="numeric" placeholder="mm/dd/yyyy" maxlength="10" autocomplete="off">
+          <span class="pick" title="Pick a date">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <input id="fFromPick" type="date" aria-label="Open calendar for start date">
+          </span>
+        </div>
+      </div>
+      <div class="f fw-date"><label for="fTo">Date to</label>
+        <div class="datewrap">
+          <input id="fTo" type="text" inputmode="numeric" placeholder="mm/dd/yyyy" maxlength="10" autocomplete="off">
+          <span class="pick" title="Pick a date">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <input id="fToPick" type="date" aria-label="Open calendar for end date">
+          </span>
+        </div>
+      </div>
+      <button class="btn ghost" id="fClear" type="button" hidden>Clear filters</button>
+    </div>
+    <div class="msg" id="filterMsg" role="alert"></div>
+    <div class="filtersum" id="filterSum" hidden></div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Item</th><th>Description</th><th class="r">Qty</th>
+            <th class="r">Amount</th><th class="r">Total Amount</th><th>Remarks</th><th>Recorded by</th><th class="noprint"></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* Optional defaults. You can also type these into the page; it remembers them in this browser.
+   Use the anon / publishable key only, never the service_role or secret key. */
+window.APP_ENV = { SUPABASE_URL: "", SUPABASE_ANON_KEY: "" };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  var CFG_KEY = "soa:sb:cfg";
+  var SQL = `-- Statement of Account: run once in Supabase -> SQL Editor
+create table if not exists public.txns (
+  id uuid primary key default gen_random_uuid(),
+  type text not null check (type in ('income', 'expense')),
+  tx_date date not null,
+  item text not null default '',
+  description text not null default '',
+  quantity text not null default '1',
+  amount numeric not null default 0,
+  remarks text not null default '',
+  created bigint not null default 0,
+  recorded_by text,
+  acct text
+);
+create index if not exists txns_acct_date_idx on public.txns (acct, tx_date);
+
+create table if not exists public.settings (
+  id text primary key,
+  data jsonb not null default '{}'::jsonb
+);
+
+-- Only signed-in users can read or write. No public access.
+alter table public.txns enable row level security;
+alter table public.settings enable row level security;
+
+drop policy if exists "authenticated full access" on public.txns;
+create policy "authenticated full access" on public.txns
+  for all to authenticated using (true) with check (true);
+
+drop policy if exists "authenticated full access" on public.settings;
+create policy "authenticated full access" on public.settings
+  for all to authenticated using (true) with check (true);
+
+-- Live updates between users (safe to re-run)
+do $$ begin
+  alter publication supabase_realtime add table public.txns;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.settings;
+exception when duplicate_object then null; end $$;
+`;
+  var $ = function (id) { return document.getElementById(id); };
+  function showError(m) { var b = $("sbError"); b.textContent = m || ""; b.hidden = !m; }
+
+  /*SHIM-START*/
+  var COLMAP = { date: "tx_date", by: "recorded_by" };
+  function rowToTx(r) {
+    return {
+      type: r.type, date: r.tx_date, item: r.item || "", description: r.description || "",
+      quantity: r.quantity == null ? "1" : String(r.quantity),
+      amount: Number(r.amount) || 0, remarks: r.remarks || "",
+      created: Number(r.created) || 0, by: r.recorded_by || undefined, acct: r.acct || undefined
+    };
+  }
+  function txToRow(rec) {
+    return {
+      type: rec.type === "expense" ? "expense" : "income", tx_date: rec.date, item: rec.item || "",
+      description: rec.description || "", quantity: String(rec.quantity == null ? "1" : rec.quantity),
+      amount: Number(rec.amount) || 0, remarks: rec.remarks || "",
+      created: Number(rec.created) || Date.now(), recorded_by: rec.by || null, acct: rec.acct || null
+    };
+  }
+  function partToRow(part) {
+    var o = {};
+    Object.keys(part).forEach(function (k) { o[COLMAP[k] || k] = part[k]; });
+    return o;
+  }
+  function mapErr(e) {
+    var m = (e && e.message) || "Request failed";
+    var denied = (e && e.code === "42501") || /row-level security|permission denied/i.test(m);
+    return { code: denied ? "invalid_argument" : "unavailable", message: m };
+  }
+  function friendly(m) {
+    return /does not exist|schema cache|Could not find the table/i.test(m)
+      ? "The database tables are missing. Run supabase-setup.sql in the Supabase SQL Editor, then reload."
+      : "Database error: " + m;
+  }
+  function makeDb(c) {
+    var txL = [], stL = [], timers = {};
+    function fail(e) { showError(friendly(mapErr(e).message)); }
+    function later(k, fn) { clearTimeout(timers[k]); timers[k] = setTimeout(fn, 120); }
+    function fetchTx() {
+      var all = [];
+      function page(from) {
+        return c.from("txns").select("*").order("created", { ascending: true }).range(from, from + 999).then(function (r) {
+          if (r.error) throw r.error;
+          var d = r.data || [];
+          all = all.concat(d);
+          if (d.length === 1000) return page(from + 1000);
+        });
+      }
+      return page(0).then(function () {
+        showError("");
+        var docs = all.map(function (r) { return { id: r.id, data: function () { return rowToTx(r); } }; });
+        txL.forEach(function (cb) { cb({ docs: docs }); });
+      }).catch(fail);
+    }
+    function fetchSt() {
+      return c.from("settings").select("data").eq("id", "main").maybeSingle().then(function (r) {
+        if (r.error) throw r.error;
+        var row = r.data;
+        var snap = { exists: !!row, data: function () { return row ? row.data : {}; } };
+        stL.forEach(function (cb) { cb(snap); });
+      }).catch(fail);
+    }
+    function done(kind) {
+      return function (r) {
+        if (r && r.error) { var er = mapErr(r.error); if (/does not exist|schema cache/i.test(er.message)) showError(friendly(er.message)); throw er; }
+        later(kind, kind === "tx" ? fetchTx : fetchSt);
+      };
+    }
+    try {
+      c.channel("soa-live")
+        .on("postgres_changes", { event: "*", schema: "public", table: "txns" }, function () { later("tx", fetchTx); })
+        .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, function () { later("st", fetchSt); })
+        .subscribe();
+    } catch (e) {}
+    setInterval(function () { if (!document.hidden && (txL.length || stL.length)) { fetchTx(); fetchSt(); } }, 30000);
+    return {
+      collection: function () {
+        return {
+          onSnapshot: function (cb) { txL.push(cb); fetchTx(); return function () { txL = txL.filter(function (x) { return x !== cb; }); }; },
+          add: function (rec) { return c.from("txns").insert(txToRow(rec)).then(done("tx")); }
+        };
+      },
+      doc: function (path) {
+        var p = path.split("/"), id = p[1];
+        if (p[0] === "txns") {
+          return {
+            set: function (rec) { return c.from("txns").update(txToRow(rec)).eq("id", id).then(done("tx")); },
+            update: function (part) { return c.from("txns").update(partToRow(part)).eq("id", id).then(done("tx")); },
+            delete: function () { return c.from("txns").delete().eq("id", id).then(done("tx")); }
+          };
+        }
+        return {
+          onSnapshot: function (cb) { stL.push(cb); fetchSt(); return function () { stL = stL.filter(function (x) { return x !== cb; }); }; },
+          set: function (obj) { return c.from("settings").upsert({ id: "main", data: obj }).then(done("st")); }
+        };
+      }
+    };
+  }
+  /*SHIM-END*/
+
+  var MIME = { csv: "text/csv;charset=utf-8", pdf: "application/pdf" };
+  var downloadShim = {
+    save: function (req) {
+      return new Promise(function (resolve, reject) {
+        try {
+          var ext = String(req.filename).split(".").pop().toLowerCase();
+          var blob = req.data instanceof Blob ? req.data : new Blob([req.data], { type: MIME[ext] || "application/octet-stream" });
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob); a.download = req.filename;
+          document.body.appendChild(a); a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+          resolve({ status: "saved" });
+        } catch (e) { reject({ code: "unavailable", message: "Download failed" }); }
+      });
+    }
+  };
+
+  var resolveGate, gateOpen = false;
+  var gate = new Promise(function (r) { resolveGate = r; });
+  var client = null, email = "", reconfigure = false;
+  function open(v) { gateOpen = true; resolveGate(v); }
+
+  function loadCfg() {
+    var env = window.APP_ENV || {}, saved = {};
+    try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "{}") || {}; } catch (e) {}
+    return { url: String(saved.url || env.SUPABASE_URL || "").trim(), key: String(saved.key || env.SUPABASE_ANON_KEY || "").trim() };
+  }
+  function keyRole(k) {
+    try { return JSON.parse(atob(k.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).role || ""; } catch (e) { return ""; }
+  }
+  function badKey(k) { return /^sb_secret_/.test(k) || keyRole(k) === "service_role"; }
+  function showSetup(cfg, msg) {
+    $("loginPanel").hidden = true;
+    $("setupPanel").hidden = false;
+    $("sbUrl").value = cfg.url; $("sbKey").value = cfg.key;
+    $("setupMsg").textContent = msg || "";
+    $("sbLocal").hidden = gateOpen; $("sbCancel").hidden = !gateOpen;
+  }
+  function showLogin() { $("setupPanel").hidden = true; $("loginPanel").hidden = false; $("loginEmail").focus(); }
+  function ready(sess) {
+    email = (sess && sess.user && sess.user.email) || "";
+    $("setupPanel").hidden = true; $("loginPanel").hidden = true; $("signOutBtn").hidden = false;
+    open(client);
+  }
+  function proceed() {
+    var cfg = loadCfg();
+    if (!cfg.url || !cfg.key) { showSetup(cfg); return; }
+    if (badKey(cfg.key)) { showSetup(cfg, "That looks like a secret (service_role) key. Use the anon / publishable key instead."); return; }
+    if (!window.supabase || !window.supabase.createClient) { showSetup(cfg, "The Supabase library couldn't load. Check your connection and reload."); return; }
+    try {
+      client = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true } });
+    } catch (e) { showSetup(cfg, "That URL or key isn't valid."); return; }
+    client.auth.getSession().then(function (r) {
+      var sess = r && r.data && r.data.session;
+      if (sess) ready(sess); else showLogin();
+    }).catch(function () { showSetup(cfg, "Couldn't reach Supabase. Check the Project URL."); });
+  }
+
+  $("sqlText").textContent = SQL;
+  $("sqlCopy").addEventListener("click", function () {
+    try { navigator.clipboard.writeText(SQL); $("sqlCopy").textContent = "Copied"; setTimeout(function () { $("sqlCopy").textContent = "Copy SQL"; }, 1500); } catch (e) {}
+  });
+  $("sbConnect").addEventListener("click", function () {
+    var url = $("sbUrl").value.trim().replace(/\/+$/, ""), key = $("sbKey").value.trim();
+    if (!/^https:\/\/[^\s/]+$/i.test(url)) { $("setupMsg").textContent = "Enter the Project URL, like https://abcd1234.supabase.co"; return; }
+    if (!key) { $("setupMsg").textContent = "Enter the anon / publishable key."; return; }
+    if (badKey(key)) { $("setupMsg").textContent = "That looks like a secret (service_role) key. Use the anon / publishable key instead."; return; }
+    try { localStorage.setItem(CFG_KEY, JSON.stringify({ url: url, key: key })); } catch (e) {}
+    if (reconfigure) { location.reload(); return; }
+    $("setupMsg").textContent = "";
+    proceed();
+  });
+  $("sbLocal").addEventListener("click", function () { $("setupPanel").hidden = true; open(null); });
+  $("sbCancel").addEventListener("click", function () { reconfigure = false; $("setupPanel").hidden = true; });
+  $("dbSettingsBtn").addEventListener("click", function () { reconfigure = gateOpen; showSetup(loadCfg()); });
+  $("loginBtn").addEventListener("click", function () {
+    var e = $("loginEmail").value.trim(), p = $("loginPass").value;
+    if (!e || !p) { $("loginMsg").textContent = "Enter your email and password."; return; }
+    $("loginBtn").disabled = true; $("loginMsg").textContent = "";
+    client.auth.signInWithPassword({ email: e, password: p }).then(function (r) {
+      if (r.error) { $("loginMsg").textContent = r.error.message; return; }
+      ready(r.data.session);
+    }).catch(function () { $("loginMsg").textContent = "Couldn't sign in. Try again."; })
+      .then(function () { $("loginBtn").disabled = false; });
+  });
+  $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+  $("signOutBtn").addEventListener("click", function () {
+    if (!client) return;
+    client.auth.signOut().then(function () { location.reload(); });
+  });
+
+  /* Present the same capability surface the page code already uses. */
+  window.claude = {
+    use: function (name) {
+      if (name === "db") return gate.then(function (c) { return c ? makeDb(c) : null; });
+      if (name === "user") return gate.then(function (c) {
+        return c ? {
+          can: function () { return Promise.resolve(true); },
+          me: function () { return Promise.resolve({ id: email }); },
+          profiles: function (ids) {
+            var o = {};
+            ids.forEach(function (i) { o[i] = { name: i, isMe: i === email }; });
+            return Promise.resolve(o);
+          }
+        } : null;
+      });
+      if (name === "downloads") return Promise.resolve(downloadShim);
+      return Promise.resolve(null);
+    }
+  };
+  proceed();
+})();
+</script>
+<script>
+(function () {
+  var KEY = "soa:v1", DISMISS = "soa:v1:dismissed";
+  var state = { account: "", symbol: "₱", opening: 0, items: [], clients: [], accounts: [], txns: [] };
+  var addingAcct = false, renamingAcct = false;
+  var addingClient = false, renaming = false;
+  var now = new Date();
+  var view = now.getFullYear() + "-" + pad(now.getMonth() + 1);
+  var editingId = null, pendingDelete = null;
+  var mode = "connecting";            // connecting | shared | local
+  var db = null, downloads = null, userNs = null, myId = null, canWrite = null, revoked = false;
+  var gotTx = false, gotSet = false, settingsExists = false, offered = false, dirtyRows = false;
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  var fmt = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function money(n) { var s = state.symbol + fmt.format(Math.abs(n)); return n < 0 ? "-" + s : s; }
+  function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  var $ = function (id) { return document.getElementById(id); };
+  function readOnly() { return mode === "shared" && (canWrite === false || revoked); }
+
+  /* ---------- local (this device) storage: fallback + legacy data ---------- */
+  function readLegacy() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var d = JSON.parse(raw); if (d && Array.isArray(d.txns)) return d; }
+    } catch (e) {}
+    return null;
+  }
+  function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function dropLegacy(id) {
+    var d = readLegacy(); if (!d) return;
+    d.txns = d.txns.filter(function (t) { return t.id !== id; });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+  }
+  function startLocal() {
+    mode = "local";
+    var d = readLegacy();
+    if (d) { state.account = d.account || ""; state.symbol = d.symbol || "₱"; state.opening = num(d.opening); state.items = Array.isArray(d.items) ? d.items.slice() : []; state.clients = Array.isArray(d.clients) ? d.clients.slice() : []; state.accounts = Array.isArray(d.accounts) ? d.accounts.map(function (a) { return Object.assign({}, a); }) : []; state.txns = d.txns; }
+    $("date").value = toUS(defaultDate());
+    render();
+  }
+
+  /* ---------- shared storage ---------- */
+  function connect(d) {
+    db = d; mode = "shared";
+    db.collection("txns").onSnapshot(function (snap) {
+      state.txns = snap.docs.map(function (x) { var o = Object.assign({}, x.data()); o.id = x.id; return o; });
+      gotTx = true; render(); maybeOffer();
+    }, onDbErr);
+    db.doc("settings/main").onSnapshot(function (snap) {
+      settingsExists = snap.exists;
+      if (snap.exists) {
+        var s = snap.data();
+        state.account = s.account || ""; state.symbol = s.symbol || "₱"; state.opening = num(s.opening);
+        state.items = Array.isArray(s.items) ? s.items.slice() : [];
+        state.clients = Array.isArray(s.clients) ? s.clients.slice() : [];
+        state.accounts = Array.isArray(s.accounts) ? s.accounts.map(function (a) { return Object.assign({}, a); }) : [];
+      }
+      gotSet = true; render(); maybeOffer();
+    }, onDbErr);
+    render();
+  }
+  function onDbErr(e) {
+    if (e && e.code === "revoked") { revoked = true; render(); }
+  }
+  function showErr(e) {
+    var c = e && e.code, m;
+    if (c === "quota_exceeded") m = "Shared storage is full. Delete old transactions before adding new ones.";
+    else if (c === "invalid_argument" && mode === "shared") { canWrite = false; m = "You have view-only access, so changes can't be saved."; render(); }
+    else if (c === "revoked") { revoked = true; m = "Access changed. Reload to continue."; render(); }
+    else m = "Couldn't save that change. Try again.";
+    $("msg").textContent = m;
+  }
+
+  function persistAdd(rec) {
+    if (mode === "shared") return db.collection("txns").add(rec).then(function () {});
+    rec.id = uid(); state.txns.push(rec); saveLocal(); return Promise.resolve();
+  }
+  function persistSet(id, rec) {
+    if (mode === "shared") return db.doc("txns/" + id).set(rec);
+    var t = state.txns.find(function (x) { return x.id === id; });
+    if (t) Object.assign(t, rec);
+    saveLocal(); return Promise.resolve();
+  }
+  function persistDel(id) {
+    if (mode === "shared") return db.doc("txns/" + id).delete();
+    state.txns = state.txns.filter(function (x) { return x.id !== id; });
+    saveLocal(); return Promise.resolve();
+  }
+  var settingsTimer = null, settingsChain = Promise.resolve();
+  function saveSettings() {
+    if (mode === "local") { saveLocal(); return; }
+    if (mode !== "shared" || readOnly()) return;
+    clearTimeout(settingsTimer);
+    settingsTimer = setTimeout(function () {
+      settingsChain = settingsChain.then(function () {
+        return db.doc("settings/main").set({ account: state.account, symbol: state.symbol, opening: state.opening, items: state.items, clients: state.clients, accounts: state.accounts });
+      }).catch(showErr);
+    }, 500);
+  }
+
+  /* ---------- move older on-device data into shared storage ---------- */
+  function maybeOffer() {
+    if (offered || mode !== "shared" || !gotTx || !gotSet || readOnly()) return;
+    var leg = readLegacy(), n = leg ? leg.txns.length : 0;
+    try { if (localStorage.getItem(DISMISS)) n = 0; } catch (e) {}
+    if (!n) return;
+    offered = true;
+    $("bannerText").textContent = "This device has " + n + " transaction" + (n === 1 ? "" : "s") + " saved from before sharing was turned on. Move " + (n === 1 ? "it" : "them") + " into the shared statement?";
+    $("banner").hidden = false;
+  }
+  function moveLegacy() {
+    var leg = readLegacy(); if (!leg) { $("banner").hidden = true; return; }
+    $("moveBtn").disabled = true; $("skipBtn").disabled = true;
+    $("bannerText").textContent = "Moving transactions…";
+    var chain = Promise.resolve();
+    leg.txns.slice().forEach(function (t) {
+      chain = chain.then(function () {
+        return db.collection("txns").add(Object.assign({
+          type: t.type === "expense" ? "expense" : "income", date: String(t.date || ""), item: String(t.item || ""),
+          description: String(t.description || ""), quantity: String(t.quantity == null ? "1" : t.quantity),
+          amount: num(t.amount), remarks: String(t.remarks || ""), created: t.created || Date.now()
+        }, myId ? { by: myId } : {}));
+      }).then(function () { dropLegacy(t.id); });
+    });
+    chain.then(function () {
+      if (!settingsExists && (leg.account || num(leg.opening))) {
+        return db.doc("settings/main").set({ account: leg.account || "", symbol: leg.symbol || "₱", opening: num(leg.opening) });
+      }
+    }).then(function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      $("banner").hidden = true;
+    }).catch(function (e) {
+      showErr(e);
+      $("bannerText").textContent = "Some transactions couldn't be moved. Try again.";
+      $("moveBtn").disabled = false; $("skipBtn").disabled = false;
+    });
+  }
+
+  /* ---------- calculations ---------- */
+  function defaultDate() { var t = todayStr(); return t.slice(0, 7) === view ? t : view + "-01"; }
+  function monthLabel() {
+    var p = view.split("-");
+    return new Date(+p[0], +p[1] - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }
+  function prevMonthLabel() {
+    var p = view.split("-");
+    return new Date(+p[0], +p[1] - 2, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }
+  function shiftMonth(delta) {
+    var p = view.split("-");
+    var d = new Date(+p[0], +p[1] - 1 + delta, 1);
+    view = d.getFullYear() + "-" + pad(d.getMonth() + 1);
+    pendingDelete = null;
+    if (!editingId) $("date").value = toUS(defaultDate());
+    render();
+  }
+  function qtyOf(t) { return (t.quantity === "" || t.quantity == null) ? 1 : num(t.quantity); }
+  function totalOf(t) { return qtyOf(t) * num(t.amount); }
+  function netOf(t) { return totalOf(t); }
+  function acctTxns() { return state.txns.filter(function (t) { return (t.acct || "default") === sel.acct; }); }
+  function beginningBalance() {
+    var ca = curAcct(), b = ca ? num(ca.opening) : 0;
+    acctTxns().forEach(function (t) {
+      if ((t.date || "").slice(0, 7) < view) b += (t.type === "income" ? 1 : -1) * netOf(t);
+    });
+    return b;
+  }
+  function monthRows() {
+    return acctTxns().filter(function (t) { return (t.date || "").slice(0, 7) === view; })
+      .sort(function (a, b) { return a.date === b.date ? (a.created || 0) - (b.created || 0) : (a.date < b.date ? -1 : 1); });
+  }
+  function toUS(iso) {
+    var p = String(iso || "").split("-");
+    return p.length === 3 ? p[1] + "/" + p[2] + "/" + p[0] : "";
+  }
+  function parseUS(str) {
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str || "").trim());
+    if (!m) return null;
+    var mo = +m[1], d = +m[2], y = +m[3];
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+    return y + "-" + pad(mo) + "-" + pad(d);
+  }
+  var fmtDate = toUS;
+
+  /* ---------- clients and accounts ---------- */
+  var SELKEY = "soa:v1:sel";
+  var sel = { client: "", acct: "" };
+  try { var sv = JSON.parse(localStorage.getItem(SELKEY) || "null"); if (sv) sel = { client: String(sv.client || ""), acct: String(sv.acct || "") }; } catch (e) {}
+  function saveSel() { try { localStorage.setItem(SELKEY, JSON.stringify(sel)); } catch (e) {} }
+  function ready() { return mode === "local" || (mode === "shared" && gotTx && gotSet); }
+  function acctList() {
+    var l = state.accounts.slice();
+    if (!l.some(function (a) { return a.id === "default"; }) &&
+        (state.txns.some(function (t) { return !t.acct; }) || num(state.opening) !== 0 || state.account)) {
+      l.push({ id: "default", client: state.account || "Unassigned", name: "Main account", opening: num(state.opening) });
+    }
+    return l;
+  }
+  function clientList() {
+    var seen = {}, out = [];
+    state.clients.concat([state.account], acctList().map(function (a) { return a.client; })).forEach(function (n) {
+      n = String(n == null ? "" : n).trim();
+      if (n && !seen[n]) { seen[n] = 1; out.push(n); }
+    });
+    out.sort(function (a, b) { return a.localeCompare(b); });
+    return out;
+  }
+  function acctsFor(c) {
+    return acctList().filter(function (a) { return a.client === c; })
+      .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+  }
+  function curAcct() { return acctList().find(function (a) { return a.id === sel.acct; }) || null; }
+  function ensureSel() {
+    var before = sel.client + "|" + sel.acct;
+    var cl = clientList();
+    if (cl.indexOf(sel.client) < 0) sel.client = cl[0] || "";
+    var al = acctsFor(sel.client);
+    if (!al.some(function (a) { return a.id === sel.acct; })) sel.acct = al.length ? al[0].id : "";
+    if (before !== sel.client + "|" + sel.acct) saveSel();
+  }
+  var clientsKey = null, acctsKey = null;
+  function refreshClients() {
+    var list = clientList(), key = list.join("\u0001");
+    var el = $("account");
+    if (key !== clientsKey) {
+      clientsKey = key;
+      el.innerHTML = (list.length ? "" : '<option value="">Select a client\u2026</option>') +
+        list.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("") +
+        '<option value="__new__">+ Add new client\u2026</option>';
+    }
+    if (!addingClient) el.value = list.indexOf(sel.client) >= 0 ? sel.client : "";
+  }
+  function refreshAccts() {
+    var list = acctsFor(sel.client);
+    var key = sel.client + "|" + list.map(function (a) { return a.id + ":" + a.name; }).join("\u0001");
+    var el = $("acctSel");
+    if (key !== acctsKey) {
+      acctsKey = key;
+      el.innerHTML = (list.length ? "" : '<option value="">No accounts yet</option>') +
+        list.map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.name) + '</option>'; }).join("") +
+        '<option value="__new__">+ Add new account\u2026</option>';
+    }
+    if (addingAcct && !renamingAcct) el.value = "__new__";
+    else el.value = list.some(function (a) { return a.id === sel.acct; }) ? sel.acct : "";
+  }
+  function hideNewClient() { addingClient = false; renaming = false; $("newClientRow").hidden = true; $("clientNew").value = ""; $("clientAddBtn").textContent = "Add"; $("clientMsg").textContent = ""; }
+  function hideNewAcct() { addingAcct = false; renamingAcct = false; $("newAcctRow").hidden = true; $("acctNew").value = ""; $("acctAddBtn").textContent = "Add"; $("acctMsg").textContent = ""; }
+  function hideDelAcct() { $("delAcctRow").hidden = true; $("delAcctOk").disabled = false; $("delAcctNo").disabled = false; }
+  function addClient() {
+    var name = $("clientNew").value.trim();
+    if (!name) { $("clientNew").focus(); return; }
+    if (mode === "connecting") return;
+    var lower = name.toLowerCase(), found = null;
+    if (renaming) {
+      var old = sel.client;
+      var clash = clientList().some(function (n) { return n !== old && n.toLowerCase() === lower; });
+      if (clash) { $("clientMsg").textContent = "A client with that name already exists."; $("clientNew").focus(); return; }
+      state.clients = state.clients.filter(function (n) { return n !== old; }).concat([name]);
+      state.accounts = state.accounts.map(function (a) { return a.client === old ? Object.assign({}, a, { client: name }) : a; });
+      if (state.account === old || (!state.account && old === "Unassigned")) state.account = name;
+      sel.client = name;
+      saveSettings(); hideNewClient(); ensureSel(); saveSel(); render();
+      return;
+    }
+    clientList().forEach(function (n) { if (!found && n.toLowerCase() === lower) found = n; });
+    if (!found) { state.clients = state.clients.concat([name]); found = name; }
+    sel.client = found; sel.acct = "";
+    saveSettings(); hideNewClient(); hideNewAcct(); ensureSel(); saveSel();
+    if (editingId) clearForm();
+    if (!sel.acct) { addingAcct = true; $("newAcctRow").hidden = false; render(); $("acctNew").focus(); }
+    else render();
+  }
+  function deleteAccount() {
+    var a = curAcct();
+    if (!a || mode === "connecting") return;
+    var ids = state.txns.filter(function (t) { return (t.acct || "default") === a.id; }).map(function (t) { return t.id; });
+    $("delAcctOk").disabled = true; $("delAcctNo").disabled = true;
+    $("delAcctText").textContent = "Deleting\u2026";
+    var chain = Promise.resolve();
+    if (mode === "shared") ids.forEach(function (id) { chain = chain.then(function () { return db.doc("txns/" + id).delete(); }); });
+    else state.txns = state.txns.filter(function (t) { return ids.indexOf(t.id) < 0; });
+    chain.then(function () {
+      state.accounts = state.accounts.filter(function (x) { return x.id !== a.id; });
+      if (a.id === "default") {
+        state.opening = 0;
+        if (state.account) {
+          if (state.clients.indexOf(state.account) < 0) state.clients = state.clients.concat([state.account]);
+          state.account = "";
+        }
+      }
+      if (editingId) clearForm();
+      sel.acct = "";
+      saveSettings(); hideDelAcct(); ensureSel(); saveSel(); render();
+    }).catch(function (e) {
+      showErr(e);
+      $("delAcctText").textContent = "Couldn't delete everything. Try again.";
+      $("delAcctOk").disabled = false; $("delAcctNo").disabled = false;
+    });
+  }
+  function addAccount() {
+    var name = $("acctNew").value.trim();
+    if (!name) { $("acctNew").focus(); return; }
+    if (mode === "connecting") return;
+    if (!sel.client) { $("acctMsg").textContent = "Add or select a client first."; return; }
+    var lower = name.toLowerCase();
+    if (renamingAcct) {
+      var a0 = curAcct();
+      if (!a0) { hideNewAcct(); return; }
+      var clash = acctsFor(sel.client).some(function (x) { return x.id !== a0.id && String(x.name).toLowerCase() === lower; });
+      if (clash) { $("acctMsg").textContent = "An account with that name already exists for this client."; $("acctNew").focus(); return; }
+      if (state.accounts.some(function (x) { return x.id === a0.id; })) {
+        state.accounts = state.accounts.map(function (x) { return x.id === a0.id ? Object.assign({}, x, { name: name }) : x; });
+      } else {
+        state.accounts = state.accounts.concat([{ id: "default", client: a0.client, name: name, opening: num(state.opening) }]);
+      }
+      saveSettings(); hideNewAcct(); ensureSel(); render();
+      return;
+    }
+    var dup = acctsFor(sel.client).find(function (a) { return String(a.name).toLowerCase() === lower; });
+    if (dup) { sel.acct = dup.id; }
+    else {
+      var a = { id: uid(), client: sel.client, name: name, opening: 0 };
+      state.accounts = state.accounts.concat([a]);
+      sel.acct = a.id;
+      saveSettings();
+    }
+    if (editingId) clearForm();
+    hideNewAcct(); ensureSel(); saveSel(); render();
+  }
+
+  /* ---------- item dropdown ---------- */
+  var itemsKey = null;
+  function itemList() {
+    var seen = {}, out = [];
+    state.items.concat(state.txns.map(function (t) { return t.item; })).forEach(function (n) {
+      n = String(n == null ? "" : n).trim();
+      if (n && !seen[n]) { seen[n] = 1; out.push(n); }
+    });
+    out.sort(function (a, b) { return a.localeCompare(b); });
+    return out;
+  }
+  function refreshItems(force) {
+    var list = itemList(), key = list.join("\u0001");
+    if (!force && key === itemsKey) return;
+    itemsKey = key;
+    var sel = $("item"), cur = sel.value;
+    sel.innerHTML = '<option value="">Select an item\u2026</option>' +
+      list.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("") +
+      '<option value="__new__">+ Add new item\u2026</option>';
+    sel.value = (cur === "__new__" || (cur && list.indexOf(cur) >= 0)) ? cur : "";
+  }
+  function hideNewItem() { $("newItemRow").hidden = true; $("itemNew").value = ""; }
+  function addItem() {
+    var name = $("itemNew").value.trim();
+    if (!name) { $("itemNew").focus(); return; }
+    if (mode === "connecting") { $("msg").textContent = "Still connecting. Try again in a moment."; return; }
+    var lower = name.toLowerCase(), found = null;
+    itemList().forEach(function (n) { if (!found && n.toLowerCase() === lower) found = n; });
+    if (!found) { state.items = state.items.concat([name]); saveSettings(); found = name; }
+    refreshItems(true);
+    $("item").value = found;
+    hideNewItem();
+    $("msg").textContent = "";
+    $("amt").focus();
+  }
+
+  /* ---------- filters ---------- */
+  var fType = "", fItem = "", fFrom = "", fTo = "", fItemsKey = null;
+  function rangeActive() { return !!(fFrom || fTo); }
+  function filtersActive() { return !!(fType || fItem || fFrom || fTo); }
+  function listRows() {
+    return acctTxns().filter(function (t) {
+      var d = t.date || "";
+      if (rangeActive()) { if (fFrom && d < fFrom) return false; if (fTo && d > fTo) return false; }
+      else if (d.slice(0, 7) !== view) return false;
+      if (fType && t.type !== fType) return false;
+      if (fItem && t.item !== fItem) return false;
+      return true;
+    }).sort(function (a, b) { return a.date === b.date ? (a.created || 0) - (b.created || 0) : (a.date < b.date ? -1 : 1); });
+  }
+  function refreshFilterItems() {
+    var list = itemList(), key = list.join("\u0001");
+    if (key === fItemsKey) return;
+    fItemsKey = key;
+    var el = $("fItem");
+    el.innerHTML = '<option value="">All items</option>' +
+      list.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("");
+    el.value = list.indexOf(fItem) >= 0 ? fItem : "";
+    fItem = el.value;
+  }
+  function readFilters() {
+    fType = $("fType").value; fItem = $("fItem").value;
+    var a = $("fFrom").value.trim(), b = $("fTo").value.trim();
+    fFrom = parseUS(a) || ""; fTo = parseUS(b) || "";
+    var m = "";
+    if ((a && !fFrom && a.length >= 10) || (b && !fTo && b.length >= 10)) m = "Enter dates as a real mm/dd/yyyy date.";
+    else if (fFrom && fTo && fFrom > fTo) m = "The start date is after the end date.";
+    $("filterMsg").textContent = m;
+    render();
+  }
+  function clearFilters() {
+    $("fType").value = ""; $("fItem").value = ""; $("fFrom").value = ""; $("fTo").value = "";
+    readFilters();
+  }
+  function wireDate(tid, pid) {
+    var t = $(tid), pk = $(pid);
+    t.addEventListener("input", function (e) {
+      var d = e.target.value.replace(/\D/g, "").slice(0, 8), out = d;
+      if (d.length > 4) out = d.slice(0, 2) + "/" + d.slice(2, 4) + "/" + d.slice(4);
+      else if (d.length > 2) out = d.slice(0, 2) + "/" + d.slice(2);
+      e.target.value = out;
+      readFilters();
+    });
+    ["pointerdown", "focus"].forEach(function (ev) { pk.addEventListener(ev, function () { pk.value = parseUS(t.value) || ""; }); });
+    pk.addEventListener("change", function (e) { t.value = e.target.value ? toUS(e.target.value) : ""; readFilters(); });
+  }
+
+  /* ---------- rendering ---------- */
+  function render() {
+    var ro = readOnly();
+    if (ready()) ensureSel();
+    var st = $("status");
+    st.className = "status " + (mode === "shared" ? (ro ? "ro" : "live") : mode);
+    st.textContent = mode === "connecting" ? "Connecting…"
+      : mode === "local" ? "Saved on this device only"
+      : ro ? "Connected to Supabase · view only" : "Connected to Supabase · changes sync live";
+    $("formPanel").hidden = ro;
+    refreshItems();
+    $("account").disabled = ro; $("acctSel").disabled = ro; $("symbol").disabled = ro; $("opening").disabled = ro || !sel.acct;
+
+    $("monthLabel").textContent = monthLabel();
+    refreshClients(); refreshAccts();
+    $("renameBtn").hidden = ro || !sel.client || !ready();
+    $("acctRenameBtn").hidden = ro || !sel.acct || !ready();
+    $("acctDelBtn").hidden = ro || !sel.acct || !ready();
+    $("symbol").value = state.symbol;
+    var ca = curAcct();
+    if (document.activeElement !== $("opening")) $("opening").value = ca && ca.opening ? ca.opening : "";
+
+    var rows = monthRows();
+    var inc = 0, exp = 0;
+    rows.forEach(function (t) { if (t.type === "income") inc += netOf(t); else exp += netOf(t); });
+    var begin = beginningBalance(), current = begin + inc - exp;
+    $("totBegin").textContent = money(begin);
+    $("totBegin").className = "v" + (begin < 0 ? " neg" : "");
+    $("totIncome").textContent = money(inc);
+    $("totExpense").textContent = money(exp);
+    var cur = $("totCurrent");
+    cur.textContent = money(current);
+    cur.className = "v" + (current < 0 ? " neg" : "");
+    $("beginNote").textContent = "Opening balance + ending balance through " + prevMonthLabel();
+
+    refreshFilterItems();
+    var lrows = listRows();
+    $("listScope").textContent = "\u00b7 " + (rangeActive() ? ((fFrom ? toUS(fFrom) : "Beginning") + " to " + (fTo ? toUS(fTo) : "Latest")) : monthLabel());
+    $("fClear").hidden = !filtersActive() && !$("fFrom").value && !$("fTo").value;
+    var fs = $("filterSum");
+    fs.hidden = !filtersActive();
+    if (filtersActive()) {
+      var fi = 0, fe = 0;
+      lrows.forEach(function (t) { if (t.type === "income") fi += netOf(t); else fe += netOf(t); });
+      fs.textContent = lrows.length + " transaction" + (lrows.length === 1 ? "" : "s") + " shown \u00b7 Settlement " + money(fi) + " \u00b7 Expenses " + money(fe) + " \u00b7 Net " + money(fi - fe);
+    }
+    var empty = $("empty");
+    empty.hidden = lrows.length > 0;
+    if (!lrows.length) empty.textContent = filtersActive() && ready() && sel.acct ? "No transactions match these filters." : !ready() ? "Loading transactions…" : !sel.acct ? "Add an account for this client to start recording transactions." : "No transactions for " + monthLabel() + (ro ? "." : ". Add the first one above.");
+    $("exportBtn").hidden = !downloads || !lrows.length;
+    $("pdfBtn").hidden = !downloads || !sel.acct || !ready();
+
+    var a = document.activeElement;
+    if (a && a.classList && a.classList.contains("adjin")) { dirtyRows = true; return; }
+    renderRows(lrows);
+  }
+
+  function renderRows(rows) {
+    rows = rows || listRows();
+    var ro = readOnly();
+    $("rows").innerHTML = rows.map(function (t) {
+      var cls = t.type === "income" ? "inc" : "exp";
+      var label = t.type === "income" ? "Settlement" : "Expense";
+      var delBtn = "";
+      if (!ro) {
+        delBtn = pendingDelete === t.id
+          ? '<button class="link danger" data-act="delok" data-id="' + esc(t.id) + '">Confirm delete</button><button class="link" data-act="delno" data-id="' + esc(t.id) + '">Keep</button>'
+          : '<button class="link" data-act="edit" data-id="' + esc(t.id) + '">Edit</button><button class="link danger" data-act="del" data-id="' + esc(t.id) + '">Delete</button>';
+      }
+      return '<tr class="' + cls + '" data-id="' + esc(t.id) + '"' + (ro ? '' : ' title="Double-click to edit"') + '>' +
+        '<td>' + esc(fmtDate(t.date)) + '<br><span class="tag ' + cls + '">' + label + '</span></td>' +
+        '<td>' + esc(t.item) + '</td>' +
+        '<td class="desc">' + esc(t.description) + '</td>' +
+        '<td class="r">' + esc(t.quantity) + '</td>' +
+        '<td class="r">' + money(num(t.amount)) + '</td>' +
+        '<td class="r net ' + cls + '">' + money(totalOf(t)) + '</td>' +
+        '<td class="desc">' + esc(t.remarks) + '</td>' +
+        '<td class="by" data-by="' + esc(t.by || "") + '">' + (t.by ? "" : "\u2014") + '</td>' +
+        '<td class="noprint"><div class="rowbtns">' + delBtn + '</div></td></tr>';
+    }).join("");
+    fillNames();
+  }
+  function fillNames() {
+    if (!userNs) return;
+    var cells = Array.prototype.slice.call(document.querySelectorAll("#rows td.by[data-by]"))
+      .filter(function (c) { return c.getAttribute("data-by"); });
+    if (!cells.length) return;
+    var ids = [];
+    cells.forEach(function (c) { var i = c.getAttribute("data-by"); if (ids.indexOf(i) < 0) ids.push(i); });
+    userNs.profiles(ids).then(function (ps) {
+      cells.forEach(function (c) {
+        var pr = ps[c.getAttribute("data-by")];
+        c.textContent = !pr ? "Someone" : pr.isMe ? "You" : (pr.name || "Someone");
+      });
+    });
+  }
+
+  /* ---------- form ---------- */
+  function clearForm() {
+    editingId = null;
+    $("tInc").checked = true;
+    $("item").value = ""; hideNewItem(); $("desc").value = ""; $("qty").value = "1";
+    $("amt").value = ""; $("rem").value = "";
+    $("date").value = toUS(defaultDate());
+    $("formTitle").textContent = "Add transaction";
+    $("saveBtn").textContent = "Add transaction";
+    $("cancelBtn").hidden = true;
+    $("msg").textContent = "";
+  }
+
+  function submit() {
+    if (mode === "connecting") { $("msg").textContent = "Still connecting. Try again in a moment."; return; }
+    if (!sel.acct) { $("msg").textContent = "Choose a client and account first, or add a new one."; return; }
+    var item = $("item").value === "__new__" ? "" : $("item").value.trim(), date = parseUS($("date").value), amtRaw = $("amt").value;
+    if (!date) { $("msg").textContent = "Enter the transaction date as mm/dd/yyyy."; $("date").focus(); return; }
+    if (!item) { $("msg").textContent = "Choose an item, or add a new one."; $("item").focus(); return; }
+    if (amtRaw === "" || isNaN(parseFloat(amtRaw))) { $("msg").textContent = "Enter an amount."; $("amt").focus(); return; }
+    var rec = {
+      type: $("tExp").checked ? "expense" : "income",
+      date: date, item: item, description: $("desc").value.trim(),
+      quantity: $("qty").value === "" ? "1" : $("qty").value,
+      amount: parseFloat(amtRaw), remarks: $("rem").value.trim(), created: Date.now()
+    };
+    var id = editingId;
+    if (id) {
+      var ex = state.txns.find(function (x) { return x.id === id; });
+      if (ex && ex.created) rec.created = ex.created;
+      if (ex && ex.by) rec.by = ex.by;
+      if (ex && ex.acct) rec.acct = ex.acct;
+    } else {
+      rec.acct = sel.acct;
+      if (myId) rec.by = myId;
+    }
+    $("saveBtn").disabled = true;
+    (id ? persistSet(id, rec) : persistAdd(rec)).then(function () {
+      view = date.slice(0, 7);
+      clearForm(); render();
+    }).catch(showErr).then(function () { $("saveBtn").disabled = false; });
+  }
+
+  function startEdit(id) {
+    var t = state.txns.find(function (x) { return x.id === id; });
+    if (!t) return;
+    editingId = id;
+    (t.type === "expense" ? $("tExp") : $("tInc")).checked = true;
+    hideNewItem(); refreshItems(); $("date").value = toUS(t.date); $("item").value = t.item; $("desc").value = t.description || "";
+    $("qty").value = t.quantity; $("amt").value = t.amount;
+    $("rem").value = t.remarks || "";
+    $("formTitle").textContent = "Edit transaction";
+    $("saveBtn").textContent = "Save changes";
+    $("cancelBtn").hidden = false;
+    $("msg").textContent = "";
+    $("formTitle").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("item").focus();
+  }
+
+  function csvCell(v) { var s = String(v == null ? "" : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function exportCsv() {
+    if (!downloads) return;
+    var rows = listRows(), ids = [];
+    rows.forEach(function (t) { if (t.by && ids.indexOf(t.by) < 0) ids.push(t.by); });
+    var named = (userNs && ids.length) ? userNs.profiles(ids) : Promise.resolve({});
+    named.then(function (ps) {
+      var ca = curAcct();
+      var lines = [["Client", "Account", "Transaction Date", "Type", "Item", "Description", "Quantity", "Amount", "Total Amount", "Remarks", "Recorded By"].join(",")];
+      rows.forEach(function (t) {
+        var pr = t.by && ps[t.by];
+        var who = t.by ? ((pr && pr.name) || "Someone") : "";
+        lines.push([ca ? ca.client : "", ca ? ca.name : "", toUS(t.date), t.type === "income" ? "Settlement" : "Expense", t.item, t.description, t.quantity, t.amount, totalOf(t), t.remarks, who].map(csvCell).join(","));
+      });
+      return downloads.save({ filename: "statement-of-account-" + (rangeActive() ? (fFrom || "start") + "_to_" + (fTo || "latest") : view) + ".csv", data: "\ufeff" + lines.join("\n") });
+    }).catch(function () {});
+  }
+
+  /* ---------- events ---------- */
+  $("prev").addEventListener("click", function () { shiftMonth(-1); });
+  $("next").addEventListener("click", function () { shiftMonth(1); });
+  $("saveBtn").addEventListener("click", submit);
+  $("cancelBtn").addEventListener("click", clearForm);
+  $("exportBtn").addEventListener("click", exportCsv);
+  $("pdfBtn").addEventListener("click", statementPdf);
+  $("moveBtn").addEventListener("click", moveLegacy);
+  $("skipBtn").addEventListener("click", function () {
+    try { localStorage.setItem(DISMISS, "1"); } catch (e) {}
+    $("banner").hidden = true;
+  });
+  $("item").addEventListener("change", function () {
+    if ($("item").value === "__new__") { $("newItemRow").hidden = false; $("itemNew").focus(); }
+    else hideNewItem();
+  });
+  $("itemAddBtn").addEventListener("click", addItem);
+  $("fType").addEventListener("change", readFilters);
+  $("fItem").addEventListener("change", readFilters);
+  $("fClear").addEventListener("click", clearFilters);
+  wireDate("fFrom", "fFromPick");
+  wireDate("fTo", "fToPick");
+  function syncPick() { $("datePick").value = parseUS($("date").value) || ""; }
+  ["pointerdown", "focus"].forEach(function (ev) { $("datePick").addEventListener(ev, syncPick); });
+  $("datePick").addEventListener("change", function (e) {
+    if (e.target.value) { $("date").value = toUS(e.target.value); $("msg").textContent = ""; }
+  });
+  $("date").addEventListener("input", function (e) {
+    var d = e.target.value.replace(/\D/g, "").slice(0, 8), out = d;
+    if (d.length > 4) out = d.slice(0, 2) + "/" + d.slice(2, 4) + "/" + d.slice(4);
+    else if (d.length > 2) out = d.slice(0, 2) + "/" + d.slice(2);
+    e.target.value = out;
+  });
+  $("formPanel").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target.id === "itemNew") { e.preventDefault(); addItem(); return; }
+    if (e.key === "Enter" && e.target.tagName === "INPUT" && e.target.type !== "radio") { e.preventDefault(); submit(); }
+  });
+  $("account").addEventListener("change", function (e) {
+    if (e.target.value === "__new__") { hideNewClient(); addingClient = true; $("newClientRow").hidden = false; $("clientNew").focus(); return; }
+    hideNewClient(); hideNewAcct(); hideDelAcct();
+    if (editingId) clearForm();
+    sel.client = e.target.value; sel.acct = "";
+    ensureSel(); saveSel(); render();
+  });
+  $("acctSel").addEventListener("change", function (e) {
+    if (e.target.value === "__new__") {
+      hideNewAcct();
+      if (!sel.client) { $("acctMsg").textContent = "Add or select a client first."; render(); return; }
+      addingAcct = true; $("newAcctRow").hidden = false; $("acctNew").focus(); return;
+    }
+    hideNewAcct(); hideDelAcct();
+    if (editingId) clearForm();
+    sel.acct = e.target.value;
+    ensureSel(); saveSel(); render();
+  });
+  $("acctAddBtn").addEventListener("click", addAccount);
+  $("acctRenameBtn").addEventListener("click", function () {
+    var a = curAcct(); if (!a) return;
+    hideNewAcct(); hideDelAcct();
+    addingAcct = true; renamingAcct = true;
+    $("acctAddBtn").textContent = "Save";
+    $("newAcctRow").hidden = false;
+    $("acctNew").value = a.name;
+    $("acctNew").focus(); $("acctNew").select();
+  });
+  $("acctDelBtn").addEventListener("click", function () {
+    var a = curAcct(); if (!a) return;
+    hideNewAcct();
+    var n = state.txns.filter(function (t) { return (t.acct || "default") === a.id; }).length;
+    $("delAcctText").textContent = n
+      ? "Delete \u201c" + a.name + "\u201d and its " + n + " transaction" + (n === 1 ? "" : "s") + "? This can\u2019t be undone."
+      : "Delete the empty account \u201c" + a.name + "\u201d?";
+    $("delAcctRow").hidden = false;
+    $("delAcctNo").focus();
+  });
+  $("delAcctOk").addEventListener("click", deleteAccount);
+  $("delAcctNo").addEventListener("click", hideDelAcct);
+  $("acctNew").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addAccount(); }
+    else if (e.key === "Escape") { hideNewAcct(); render(); }
+  });
+  $("clientAddBtn").addEventListener("click", addClient);
+  $("renameBtn").addEventListener("click", function () {
+    if (!sel.client) return;
+    hideNewClient();
+    addingClient = true; renaming = true;
+    $("clientAddBtn").textContent = "Save";
+    $("newClientRow").hidden = false;
+    $("clientNew").value = sel.client;
+    $("clientNew").focus(); $("clientNew").select();
+  });
+  $("clientNew").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addClient(); }
+    else if (e.key === "Escape") { hideNewClient(); render(); }
+  });
+  $("opening").addEventListener("input", function (e) {
+    var v = num(e.target.value), a = curAcct();
+    if (!a) return;
+    if (a.id === "default" && !state.accounts.some(function (x) { return x.id === "default"; })) state.opening = v;
+    else state.accounts = state.accounts.map(function (x) { return x.id === a.id ? Object.assign({}, x, { opening: v }) : x; });
+    saveSettings(); render();
+  });
+  $("symbol").addEventListener("change", function (e) { state.symbol = e.target.value; saveSettings(); render(); });
+  $("rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var id = b.getAttribute("data-id"), act = b.getAttribute("data-act");
+    if (act === "edit") startEdit(id);
+    else if (act === "del") { pendingDelete = id; render(); }
+    else if (act === "delno") { pendingDelete = null; render(); }
+    else if (act === "delok") {
+      pendingDelete = null;
+      if (editingId === id) clearForm();
+      persistDel(id).then(render).catch(showErr);
+    }
+  });
+  $("rows").addEventListener("dblclick", function (e) {
+    if (readOnly() || e.target.closest("input, button")) return;
+    var tr = e.target.closest("tr[data-id]");
+    if (!tr) return;
+    try { window.getSelection().removeAllRanges(); } catch (err) {}
+    startEdit(tr.getAttribute("data-id"));
+  });
+  $("rows").addEventListener("focusout", function () {
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (dirtyRows && !(a && a.classList && a.classList.contains("adjin"))) { dirtyRows = false; renderRows(); }
+    }, 0);
+  });
+
+  /* ---------- statement PDF ---------- */
+  var CODES = { "\u20b1": "PHP", "$": "USD", "\u20ac": "EUR", "\u00a3": "GBP", "\u00a5": "JPY" };
+  function pdfText(v) { return String(v == null ? "" : v).replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "?"); }
+  function pdfMoney(n) { return (n < 0 ? "-" : "") + (CODES[state.symbol] ? CODES[state.symbol] + " " : "") + fmt.format(Math.abs(n)); }
+  function fileSafe(v) { return pdfText(v).replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "x"; }
+  function runTable(doc, opts) {
+    if (typeof doc.autoTable === "function") doc.autoTable(opts);
+    else if (window.jspdf && typeof window.jspdf.autoTable === "function") window.jspdf.autoTable(doc, opts);
+    else throw new Error("table plugin missing");
+  }
+  function statementPdf() {
+    var msg = $("pdfMsg");
+    msg.textContent = "";
+    var J = window.jspdf && window.jspdf.jsPDF;
+    var ca = curAcct();
+    if (!downloads || !ca) return;
+    if (!J) { msg.textContent = "The PDF tool couldn't load. Check your connection and reload the page."; return; }
+    try {
+      var rows = monthRows(), inc = 0, exp = 0;
+      rows.forEach(function (t) { if (t.type === "income") inc += netOf(t); else exp += netOf(t); });
+      var begin = beginningBalance(), end = begin + inc - exp;
+      var p = view.split("-"), lastDay = new Date(+p[0], +p[1], 0).getDate();
+      var period = toUS(view + "-01") + " to " + toUS(view + "-" + pad(lastDay));
+      var client = pdfText(ca.client), acct = pdfText(ca.name);
+
+      var doc = new J({ orientation: "landscape", unit: "mm", format: "a4" });
+      var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 14;
+      var ink = [18, 33, 29], grey = [91, 108, 102];
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.setTextColor(ink[0], ink[1], ink[2]);
+      doc.text("STATEMENT OF ACCOUNT", M, 20);
+      doc.setLineWidth(0.6); doc.setDrawColor(ink[0], ink[1], ink[2]); doc.line(M, 24, W - M, 24);
+
+      function field(x, y, label, value, maxW) {
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(grey[0], grey[1], grey[2]);
+        doc.text(label, x, y);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(ink[0], ink[1], ink[2]);
+        var lines = doc.splitTextToSize(value, maxW).slice(0, 2);
+        doc.text(lines, x, y + 5);
+      }
+      field(M, 32, "CLIENT NAME", client, 125);
+      field(M, 45, "ACCOUNT NAME", acct, 125);
+      field(W / 2 + 10, 32, "STATEMENT PERIOD", period, 110);
+      field(W / 2 + 10, 45, "STATEMENT DATE", toUS(todayStr()) + "    Currency: " + (CODES[state.symbol] || state.symbol), 110);
+
+      var boxes = [
+        ["BEGINNING BALANCE", pdfMoney(begin), false],
+        ["TOTAL SETTLEMENT", pdfMoney(inc), false],
+        ["TOTAL EXPENSES", pdfMoney(exp), false],
+        ["TOTAL CURRENT BALANCE", pdfMoney(end), true]
+      ];
+      var gap = 4, bw = (W - 2 * M - 3 * gap) / 4, by = 58;
+      boxes.forEach(function (b, i) {
+        var x = M + i * (bw + gap);
+        if (b[2]) { doc.setFillColor(220, 240, 230); doc.rect(x, by, bw, 17, "F"); }
+        doc.setDrawColor(203, 216, 210); doc.setLineWidth(0.3); doc.rect(x, by, bw, 17);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(grey[0], grey[1], grey[2]);
+        doc.text(b[0], x + 3, by + 6);
+        doc.setFontSize(13); doc.setTextColor(ink[0], ink[1], ink[2]);
+        doc.text(b[1], x + 3, by + 13);
+      });
+
+      var bal = begin;
+      var body = [[
+        { content: toUS(view + "-01"), styles: { fontStyle: "italic" } },
+        { content: "Balance forward", styles: { fontStyle: "italic" } },
+        { content: "Beginning balance carried from earlier periods", colSpan: 5, styles: { fontStyle: "italic" } },
+        { content: pdfMoney(begin), styles: { fontStyle: "bold" } },
+        ""
+      ]];
+      rows.forEach(function (t) {
+        bal += (t.type === "income" ? 1 : -1) * netOf(t);
+        body.push([
+          toUS(t.date), pdfText(t.item), pdfText(t.description), t.type === "income" ? "Settlement" : "Expense",
+          pdfText(t.quantity), pdfMoney(num(t.amount)), pdfMoney(totalOf(t)),
+          pdfMoney(bal), pdfText(t.remarks)
+        ]);
+      });
+      if (!rows.length) body.push([{ content: "No transactions recorded for this period.", colSpan: 9, styles: { halign: "center", textColor: grey } }]);
+
+      function footRow(label, value, bold) {
+        return [
+          { content: label, colSpan: 7, styles: { halign: "right", fontStyle: bold ? "bold" : "normal" } },
+          { content: value, styles: { halign: "right", fontStyle: "bold" } },
+          ""
+        ];
+      }
+      runTable(doc, {
+        startY: by + 24,
+        margin: { left: M, right: M, top: 18, bottom: 20 },
+        theme: "grid",
+        head: [["Date", "Item", "Description", "Type", "Qty", "Amount", "Total Amount", "Balance", "Remarks"]],
+        body: body,
+        foot: [
+          footRow("Total settlement", pdfMoney(inc), false),
+          footRow("Total expenses", pdfMoney(exp), false),
+          footRow("Total current balance", pdfMoney(end), true)
+        ],
+        showFoot: "lastPage",
+        styles: { font: "helvetica", fontSize: 8, cellPadding: 1.8, lineColor: [203, 216, 210], lineWidth: 0.2, textColor: ink, overflow: "linebreak", valign: "middle" },
+        headStyles: { fillColor: ink, textColor: [255, 255, 255], fontStyle: "bold" },
+        footStyles: { fillColor: [238, 243, 241], textColor: ink },
+        columnStyles: {
+          0: { cellWidth: 22 }, 1: { cellWidth: 34 }, 2: { cellWidth: 58 }, 3: { cellWidth: 22 }, 4: { cellWidth: 12, halign: "right" },
+          5: { cellWidth: 28, halign: "right" }, 6: { cellWidth: 30, halign: "right" }, 7: { cellWidth: 30, halign: "right" }, 8: { cellWidth: 33 }
+        }
+      });
+
+      var y = (doc.lastAutoTable ? doc.lastAutoTable.finalY : by + 30) + 14;
+      if (y + 48 > H - 20) { doc.addPage(); y = 30; }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(ink[0], ink[1], ink[2]);
+      doc.text("Received and acknowledged by:", M, y);
+      var ly = y + 24;
+      doc.setDrawColor(ink[0], ink[1], ink[2]); doc.setLineWidth(0.4);
+      doc.line(M, ly, M + 95, ly);
+      doc.line(M + 125, ly, M + 190, ly);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+      doc.text(doc.splitTextToSize(client, 95).slice(0, 1), M, ly + 5.5);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(grey[0], grey[1], grey[2]);
+      doc.text("Client / Authorized signatory (signature over printed name)", M, ly + 10);
+      doc.text("Date signed", M + 125, ly + 5.5);
+
+      var pages = doc.getNumberOfPages();
+      for (var i = 1; i <= pages; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(grey[0], grey[1], grey[2]);
+        doc.text(doc.splitTextToSize("Statement of Account - " + client + " - " + acct + " - " + monthLabel(), W - 2 * M - 30).slice(0, 1), M, H - 9);
+        doc.text("Page " + i + " of " + pages, W - M, H - 9, { align: "right" });
+      }
+
+      var filename = "Statement-of-Account_" + fileSafe(ca.client) + "_" + fileSafe(ca.name) + "_" + view + ".pdf";
+      $("pdfBtn").disabled = true;
+      downloads.save({ filename: filename, data: doc.output("blob") })
+        .catch(function (e) { if (!e || e.code !== "declined") msg.textContent = "Couldn't save the PDF. Try again."; })
+        .then(function () { $("pdfBtn").disabled = false; });
+    } catch (err) {
+      msg.textContent = "Couldn't create the PDF. Try again.";
+    }
+  }
+
+  /* ---------- searchable dropdowns ---------- */
+  var combos = [];
+  var selValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  function makeCombo(sel) {
+    var wrap = document.createElement("div");
+    wrap.className = "combo"; wrap.setAttribute("data-for", sel.id);
+    sel.parentNode.insertBefore(wrap, sel); wrap.appendChild(sel);
+    sel.classList.add("combo-native"); sel.tabIndex = -1; sel.setAttribute("aria-hidden", "true");
+
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.className = "combo-btn"; btn.id = sel.id + "-btn";
+    btn.setAttribute("aria-haspopup", "listbox"); btn.setAttribute("aria-expanded", "false");
+    var txt = document.createElement("span"); txt.className = "combo-txt";
+    var caret = document.createElement("span"); caret.className = "combo-caret"; caret.setAttribute("aria-hidden", "true");
+    btn.appendChild(txt); btn.appendChild(caret);
+
+    var pop = document.createElement("div"); pop.className = "combo-pop"; pop.hidden = true;
+    var q = document.createElement("input"); q.type = "text"; q.className = "combo-q"; q.placeholder = "Search\u2026";
+    q.setAttribute("aria-label", "Search options"); q.autocomplete = "off";
+    var ul = document.createElement("ul"); ul.className = "combo-list"; ul.setAttribute("role", "listbox");
+    pop.appendChild(q); pop.appendChild(ul);
+    wrap.appendChild(btn); wrap.appendChild(pop);
+
+    var lab = document.querySelector('label[for="' + sel.id + '"]');
+    if (lab) lab.setAttribute("for", btn.id);
+
+    var shown = [], active = 0;
+
+    function update() {
+      var o = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+      txt.textContent = o ? o.text : "Select\u2026";
+      btn.classList.toggle("empty", !o || !o.value);
+      btn.disabled = sel.disabled;
+      if (sel.disabled && !pop.hidden) close(false);
+      if (!pop.hidden) renderList();
+    }
+    function setActive(i, scroll) {
+      active = i;
+      var target = null;
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var on = li.getAttribute("data-i") === String(i);
+        li.classList.toggle("active", on);
+        if (on) target = li;
+      });
+      if (scroll && target && target.scrollIntoView) target.scrollIntoView({ block: "nearest" });
+    }
+    function renderList() {
+      var term = q.value.trim().toLowerCase();
+      shown = Array.prototype.filter.call(sel.options, function (o) {
+        return o.value === "__new__" || !term || o.text.toLowerCase().indexOf(term) >= 0;
+      });
+      ul.innerHTML = "";
+      var selIdx = 0;
+      shown.forEach(function (o, i) {
+        var li = document.createElement("li");
+        li.setAttribute("role", "option"); li.setAttribute("data-i", i);
+        li.textContent = o.text;
+        if (o.value === "__new__") li.className = "add";
+        if (o.selected && o.value) { li.classList.add("on"); selIdx = i; }
+        ul.appendChild(li);
+      });
+      if (!shown.some(function (o) { return o.value !== "__new__"; })) {
+        var none = document.createElement("li"); none.className = "combo-none"; none.textContent = "No matches";
+        ul.insertBefore(none, ul.firstChild);
+        setActive(shown.length ? 0 : -1, false);
+      } else {
+        setActive(term ? 0 : selIdx, true);
+      }
+    }
+    function open() {
+      if (sel.disabled) return;
+      combos.forEach(function (c) { if (c !== api) c.close(false); });
+      pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+      q.value = ""; renderList();
+      var r = wrap.getBoundingClientRect();
+      pop.classList.toggle("up", r.bottom + 320 > window.innerHeight && r.top > 320);
+      q.focus();
+    }
+    function close(refocus) {
+      if (pop.hidden) return;
+      pop.hidden = true; btn.setAttribute("aria-expanded", "false");
+      if (refocus) btn.focus();
+    }
+    function choose(o) {
+      if (!o) return;
+      var changed = sel.value !== o.value;
+      sel.value = o.value;
+      close(true);
+      if (changed || o.value === "__new__") sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    btn.addEventListener("click", function () { if (pop.hidden) open(); else close(true); });
+    btn.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); open(); }
+      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && e.key !== " ") {
+        e.preventDefault(); open(); q.value = e.key; renderList();
+      }
+    });
+    q.addEventListener("input", renderList);
+    q.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") { e.preventDefault(); if (shown.length) setActive(Math.min(active + 1, shown.length - 1), true); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); if (shown.length) setActive(Math.max(active - 1, 0), true); }
+      else if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); choose(shown[active]); }
+      else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(true); }
+      else if (e.key === "Tab") { close(false); }
+    });
+    ul.addEventListener("click", function (e) {
+      var li = e.target.closest("li[data-i]");
+      if (li) choose(shown[+li.getAttribute("data-i")]);
+    });
+    ul.addEventListener("mousemove", function (e) {
+      var li = e.target.closest("li[data-i]");
+      if (li && +li.getAttribute("data-i") !== active) setActive(+li.getAttribute("data-i"), false);
+    });
+
+    Object.defineProperty(sel, "value", {
+      configurable: true,
+      get: function () { return selValueDesc.get.call(sel); },
+      set: function (v) { selValueDesc.set.call(sel, v); update(); }
+    });
+    sel.focus = function () { btn.focus(); };
+    new MutationObserver(update).observe(sel, { childList: true, attributes: true, attributeFilter: ["disabled"] });
+
+    var api = { wrap: wrap, close: close };
+    combos.push(api);
+    update();
+  }
+  document.addEventListener("mousedown", function (e) {
+    combos.forEach(function (c) { if (!c.wrap.contains(e.target)) c.close(false); });
+  });
+
+  /* ---------- start ---------- */
+  ["account", "acctSel", "symbol", "item", "fType", "fItem"].forEach(function (id) { makeCombo($(id)); });
+  $("date").value = toUS(defaultDate());
+  render();
+  if (!window.claude || !window.claude.use) { startLocal(); return; }
+  Promise.all([window.claude.use("db"), window.claude.use("user"), window.claude.use("downloads")]).then(function (r) {
+    downloads = r[2];
+    if (!r[0]) { startLocal(); return; }
+    userNs = r[1];
+    var can = userNs ? userNs.can("data.write") : Promise.resolve(null);
+    var me = userNs ? userNs.me() : Promise.resolve(null);
+    return Promise.all([can, me]).then(function (v) { canWrite = v[0]; myId = v[1] ? v[1].id : null; connect(r[0]); });
+  }).catch(function () { if (mode === "connecting") startLocal(); });
+})();
+</script>
+</body>
+</html>
